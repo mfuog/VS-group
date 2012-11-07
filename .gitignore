@@ -6,8 +6,9 @@
 
 # Ignore bundler config
 /.bundle
-+.classpath
-+.project
+.classpath
+.project
+.settings
 bin/
 
 # Ignore the default SQLite database.
