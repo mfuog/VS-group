@@ -62,7 +62,7 @@ public final class FileCopyDistributed
 		System.out.println("done.");
 	}
 	
-	private static final class Transporter implements Runnable
+	public static final class Transporter implements Runnable
 	{
 		private final InputStream	in;
 		private final OutputStream	out;
