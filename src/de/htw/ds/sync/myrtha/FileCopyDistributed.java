@@ -1,10 +1,12 @@
-package de.htw.ds.sync;
+package de.htw.ds.sync.myrtha;
 
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -13,64 +15,81 @@ import de.htw.ds.TypeMetadata;
 
 
 /**
- * <p>Demonstrates copying a file using a single thread.</p>
+ * <p>Demonstrates copying a file by using a two threads.</p>
  */
 @TypeMetadata(copyright="2008-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
 public final class FileCopyDistributed {
 
 	/**
+	 * Transporter erweitert Runnable
+	 */
+	static class Transporter implements Runnable {	// static, damit Transporter angelegt werden kann ohne FileCopyDistributed zu instanziieren.	
+
+		InputStream inputStream;
+		OutputStream outputStream;
+		
+		//constructor
+		Transporter (InputStream input, OutputStream output){
+			inputStream = input;
+			outputStream = output;
+		}
+		
+		@Override
+		/*
+		 * Transferiert den Inhalt des Quell-Streams byteweise in den Ziel-Stream.(non-Javadoc)
+		 * @see java.lang.Runnable#run()
+		 */
+		public void run() {
+			
+			byte[] buffer = new byte[ 1024 ]; // Adjust if you want
+		    int bytesRead;
+		    try {
+		    	//byteweise vom Inputstream lesen und in den Outputstream schreiben
+				while ((bytesRead = inputStream.read(buffer)) != -1){
+				    outputStream.write(buffer, 0, bytesRead);
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			} finally {
+				try {
+					outputStream.close();	//muss wieder geschlossen werden - warum?
+				}
+				 catch (IOException e) {
+						e.printStackTrace();
+				} 
+			}//finally END
+		}//run() END
+		
+	}//Transporter class END
+	
+	/**
 	 * Copies a file. The first argument is expected to be a qualified source file name,
-	 * the second a qualified target file name. 
-	 * @param args the VM arguments
+	 * the second a qualified target file name.
+	 * @param args the arguments (!=VM arguments! http://www.avajava.com/tutorials/lessons/whats-the-difference-between-program-arguments-and-vm-arguments.html)
 	 * @throws IOException if there's an I/O related problem
 	 */
 	public static void main(final String[] args) throws IOException {
-		
-		class Transporter implements Runnable {	//final? static	
 
-			InputStream inputStream;
-			OutputStream outputStream;
-			
-			//constructor
-			Transporter (InputStream input, OutputStream output){
-				inputStream = input;
-				outputStream = output;
-			}
-			
-			@Override
-			public void run() {
-				// TODO Auto-generated method stub
-				byte[] buffer = new byte[1024]; // Adjust if you want
-			    int bytesRead;
-			    try {
-					while ((bytesRead = inputStream.read(buffer)) != -1)
-					{
-					    outputStream.write(buffer, 0, bytesRead);
-					}
-				} catch (IOException e) {
-					e.printStackTrace();
-				}	
-			}
-
-		}
-		
+		//Streams der Text-Dateien
 		InputStream input = new FileInputStream("quelle.txt"); 	//ev. google
 		OutputStream output = new FileOutputStream("ziel.txt"); //ev. google
 		
-		Transporter runnable = new Transporter(input, output);
-		runnable.run();
+		//--Variante 1: mit Runnable
+		//Transporter runnable = new Transporter(input, output);
+		//runnable.run();
 		
+		//--Variante 2: mit 2 Threads
+		//  vgl. http://openbook.galileocomputing.de/javainsel9/javainsel_17_007.htm
+		//PipeStreams verbinden => eine Pipe
+		PipedOutputStream pipedOutput = new PipedOutputStream();
+		PipedInputStream  pipedInput = new PipedInputStream();
+		pipedOutput.connect( pipedInput );
 		
+		//Threads verbinden (siehe Grafik pdf)
+		Thread thread1  = new Thread(new Transporter(input, pipedOutput));
+		Thread thread2  = new Thread(new Transporter(pipedInput, output));
 		
-		/*final Path sourcePath = Paths.get(args[0]);
-		if (!Files.isReadable(sourcePath)) throw new IllegalArgumentException(sourcePath.toString());
-
-		final Path sinkPath = Paths.get(args[1]);
-		if (sinkPath.getParent() != null && !Files.isDirectory(sinkPath.getParent())) throw new IllegalArgumentException(sinkPath.toString());
-
-		Files.copy(sourcePath, sinkPath, StandardCopyOption.REPLACE_EXISTING);
-*/
-		System.out.println("done.");
-		
+		thread1.start();
+		thread2.start();
 	}
 }

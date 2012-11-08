@@ -1,4 +1,4 @@
-package de.htw.ds.sync;
+package de.htw.ds.sync.myrtha;
 
 import java.io.IOException;
 import java.io.PrintStream;
