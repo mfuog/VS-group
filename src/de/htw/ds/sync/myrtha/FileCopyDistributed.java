@@ -71,8 +71,8 @@ public final class FileCopyDistributed {
 	public static void main(final String[] args) throws IOException {
 
 		//Streams der Text-Dateien
-		InputStream input = new FileInputStream("quelle.txt"); 	//ev. google
-		OutputStream output = new FileOutputStream("ziel.txt"); //ev. google
+		InputStream input = new FileInputStream(args[0]); 	//ev. google
+		OutputStream output = new FileOutputStream(args[1]); //ev. google
 		
 		//--Variante 1: mit Runnable
 		//Transporter runnable = new Transporter(input, output);
