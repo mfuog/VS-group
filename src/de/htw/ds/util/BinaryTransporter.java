@@ -78,6 +78,10 @@ public class BinaryTransporter implements Runnable, Callable<Long> {
 		} catch (final SocketException exception) {
 			// treat as EOF because a TCP stream has been closed by the other side
 		} finally {
+			//was passiert wenn beim schließen ein fehler auftaucht?
+			//garantieren, dass jede geöffnete ressource die geöffnet wird geschlossen wird, egal was passiert
+			//--> darum IMMER in try/catch
+			//resynchronisieren nur zum schließen einer ressource ist unschön (wegen warten). Lieber hier ressource schließen
 			if (this.closeUponCompletion) {
 				try { this.source.close(); } catch (final Throwable exception) {}
 				try { this.sink.close(); } catch (final Throwable exception) {}

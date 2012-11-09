@@ -18,7 +18,7 @@ import de.htw.ds.TypeMetadata;
  * <p>Demonstrates copying a file by using a two threads.</p>
  */
 @TypeMetadata(copyright="2008-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
-public final class FileCopyDistributed {
+public final class FileCopyDistributedMine {
 
 	/**
 	 * Transporter erweitert Runnable
@@ -45,18 +45,15 @@ public final class FileCopyDistributed {
 		    int bytesRead;
 		    try {
 		    	//byteweise vom Inputstream lesen und in den Outputstream schreiben
+		    	//immer bei io darauf achten, dass nicht alle bufferinhalte gelesen werden sondern nur die die gefüllt waren
 				while ((bytesRead = inputStream.read(buffer)) != -1){
-				    outputStream.write(buffer, 0, bytesRead);
+				    outputStream.write(buffer, 0, bytesRead);	//daher immer methode mit 3 parameter verwenden 
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			} finally {
-				try {
-					outputStream.close();	//muss wieder geschlossen werden - warum?
-				}
-				 catch (IOException e) {
-						e.printStackTrace();
-				} 
+				try { outputStream.close();}	//muss wieder geschlossen werden.. siehe Transporter in util
+				catch (IOException e) { e.printStackTrace();} 
 			}//finally END
 		}//run() END
 		
