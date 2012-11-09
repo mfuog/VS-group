@@ -1,4 +1,4 @@
-package de.htw.ds.sync.frau_r;
+package de.htw.ds.sync.frauR;
 
 import java.io.IOException;
 import java.io.InputStream;

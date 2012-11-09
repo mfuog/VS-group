@@ -1,4 +1,4 @@
-package de.htw.ds.sync.frau_r;
+package de.htw.ds.sync.frauR;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -10,7 +10,6 @@ import java.io.PipedOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import de.htw.ds.TypeMetadata;
 
 
