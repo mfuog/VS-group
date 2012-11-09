@@ -1,0 +1,29 @@
+GET / HTTP/1.1
+Host: localhost:8010
+User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:16.0) Gecko/20100101 Firefox/16.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en,de-de;q=0.8,de;q=0.5,en-us;q=0.3
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Cookie: tnr:usrvtstg01=1351689048156%7C0%7C0%7C1%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C1%7Cf%7C1%7C9%7C1351689048156
+
+GET /src/selfhtml.css HTTP/1.1
+Host: localhost:8010
+User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:16.0) Gecko/20100101 Firefox/16.0
+Accept: text/css,*/*;q=0.1
+Accept-Language: en,de-de;q=0.8,de;q=0.5,en-us;q=0.3
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Referer: http://localhost:8010/
+Cookie: tnr:usrvtstg01=1351689048156%7C0%7C0%7C1%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C1%7Cf%7C1%7C9%7C1351689048156
+
+GET /src/logo.gif HTTP/1.1
+Host: localhost:8010
+User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:16.0) Gecko/20100101 Firefox/16.0
+Accept: image/png,image/*;q=0.8,*/*;q=0.5
+Accept-Language: en,de-de;q=0.8,de;q=0.5,en-us;q=0.3
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Referer: http://localhost:8010/
+Cookie: tnr:usrvtstg01=1351689048156%7C0%7C0%7C1%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C0%7C1%7Cf%7C1%7C9%7C1351689048156
+

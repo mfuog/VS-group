@@ -1,0 +1,24 @@
+220-      __                                        
+220-     /\ \        (charon.f4.htw-berlin.de)
+220-  ___\ \ \___      __     _ __   ___     ___    
+220- /'___\ \  _ `\  /'__`\  /\`'__\/ __`\ /' _ `\  
+220-/\ \__/\ \ \ \ \/\ \L\.\_\ \ \//\ \L\ \/\ \/\ \ 
+220-\ \____\\ \_\ \_\ \__/.\_\\ \_\\ \____/\ \_\ \_\
+220- \/____/ \/_/\/_/\/__/\/_/ \/_/ \/___/  \/_/\/_/
+220-                                                
+220-RSA key fingerprint is: d5:84:46:1b:44:61:54:cf:65:7b:9c:0b:8e:bd:e4:31
+220-
+220-Please contact service-f4@lists.fhtw-berlin.de
+220-if you have any problems using this service.
+220-
+220-Bei Problemen mit diesem Dienst wenden Sie sich
+220-an service-f4@lists.fhtw-berlin.de
+220-
+220 
+331 Please specify the password.
+230 Login successful.
+200 Switching to Binary mode.
+227 Entering Passive Mode (141,45,146,102,31,71)
+150 Opening BINARY mode data connection for test.ogg (28689 bytes).
+226 File send OK.
+221 Goodbye.
