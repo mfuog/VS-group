@@ -1,4 +1,4 @@
-package de.htw.ds.sync;
+package de.htw.ds.sync.myrtha;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

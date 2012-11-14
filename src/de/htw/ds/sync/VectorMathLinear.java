@@ -1,4 +1,4 @@
-package de.htw.ds.sync;
+package de.htw.ds.sync.myrtha;
 
 import java.util.Arrays;
 import de.htw.ds.TypeMetadata;

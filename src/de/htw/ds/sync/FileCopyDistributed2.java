@@ -1,4 +1,4 @@
-package de.htw.ds.sync;
+package de.htw.ds.sync.myrtha;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,6 +13,9 @@ import de.htw.ds.util.BinaryTransporter;
 
 
 /**
+ * UNterschied zu 1: nur EINE innere Klasse definiert, von der zwei INstanzen erstellt werden
+ * in 1 werden 2 anonyme Klassen defniiert mit jeweils einer INstanz
+ * ----
  * <p>Demonstrates copying a file using two separate threads for file-read and file-write.
  * Note that this is only expected to be more efficient that a single-threaded implementation
  * when using multi-core systems with multiple hard drives!</p>
@@ -45,6 +48,7 @@ public final class FileCopyDistributed2 {
 			final PipedInputStream pipedSource = new PipedInputStream(BUFFER_LENGTH);
 			final PipedOutputStream pipedSink = new PipedOutputStream(pipedSource);
 
+			//zwei Transporter erstellen (Hilfsklasse im Projekt)/ true-> schließe hinterher
 			final Runnable fileSourceTransporter = new BinaryTransporter(true, BUFFER_LENGTH, fileSource, pipedSink);
 			final Runnable fileSinkTransporter = new BinaryTransporter(true, BUFFER_LENGTH, pipedSource, fileSink);
 
@@ -52,6 +56,7 @@ public final class FileCopyDistributed2 {
 			new Thread(fileSinkTransporter, "sink-transporter").start();
 			System.out.println("two transporter threads started.");
 		} catch (final Throwable exception) {
+			//abfangen falls threads starten nicht funktioniert: (FALLS thread starten funktioniert, sorgt true dafür)
 			try { fileSource.close(); } catch (final Throwable nestedException) {}
 			try { fileSink.close(); } catch (final Throwable nestedException) {}
 			throw exception;
