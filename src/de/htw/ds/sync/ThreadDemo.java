@@ -1,20 +1,27 @@
 package de.htw.ds.sync;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
-
 public class ThreadDemo {
-	private static final int THREAD_COUNT = Runtime.getRuntime().availableProcessors();
-	private static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(THREAD_COUNT);
 
+	/**
+	 * @param args
+	 */
+	
+	//args final machen, damit man dies in dem runnable verweden kann
 	public static void main(final String[] args) {
+		// TODO Auto-generated method stub
+
 		final Runnable runnable = new Runnable() {
+			@Override
 			public void run() {
-				System.out.println(args[0]);		
+				System.out.println(args[0]); //es kann nur auf args referenziert werden, da es final ist
+				
 			}
+			
 		};
-		new Thread(runnable).start(); // NICHT run()!!!
-		THREAD_POOL.submit(runnable);
+		
+		//start --> Ausführung erfolgt assynchron
+		//bei run() wird kein neuer Thread gestartet!
+		new Thread(runnable).start();
 	}
+
 }
