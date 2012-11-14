@@ -1,4 +1,4 @@
-package de.htw.ds.sync;
+package de.htw.ds.sync.frauR;
 
 import java.util.Random;
 import java.util.concurrent.Semaphore;

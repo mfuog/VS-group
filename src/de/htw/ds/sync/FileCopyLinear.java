@@ -1,4 +1,4 @@
-package de.htw.ds.sync;
+package de.htw.ds.sync.frauR;
 
 import java.io.IOException;
 import java.nio.file.Files;
