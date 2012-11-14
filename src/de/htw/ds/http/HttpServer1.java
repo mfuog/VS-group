@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,17 +40,13 @@ public final class HttpServer1 extends HttpServer {
 	 */
 	public void run() {
 		while (true) {
-			Socket connection = null;
-			try {
-				connection = this.getServiceSocket().accept();
-
+			try (Socket connection = this.getServiceSocket().accept()) {
 				@SuppressWarnings("resource")
 				final HttpConnectionHandler connectionHandler = new HttpConnectionHandler(connection, this.getResourceFlavor(), this.getContextPath(), this.getRequestPathMappings());
 				connectionHandler.run();
 			} catch (final SocketException exception) {
 				break;
 			} catch (final Throwable exception) {
-				try { connection.close(); } catch (final Throwable nestedException) {}
 				try { Logger.getGlobal().log(Level.WARNING, exception.getMessage(), exception); } catch (final Throwable nestedException) {}
 			}
 		}
@@ -71,7 +68,9 @@ public final class HttpServer1 extends HttpServer {
 		final int servicePort = Integer.parseInt(args[0]);
 		final int serviceThreadCount = Integer.parseInt(args[1]);
 		final Path contextPath = Paths.get(args[2]).normalize();
-		final Map<String,String> requestPathMappings = HttpServer.parseRequestPathMappings(args, 3);
+		final Map<String,String> requestPathMappings = args.length >= 4 
+			? HttpServer.parseRequestPathMappings(args, 3)
+			: new HashMap<String,String>();
 
 		try (HttpServer server = new HttpServer1(servicePort, contextPath, requestPathMappings)) {
 			for (int threadIndex = 0; threadIndex < serviceThreadCount; ++threadIndex) {

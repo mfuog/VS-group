@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -72,7 +73,9 @@ public final class HttpServer2 extends HttpServer {
 		final long timestamp = System.currentTimeMillis();
 		final int servicePort = Integer.parseInt(args[0]);
 		final Path contextPath = Paths.get(args[1]).normalize();
-		final Map<String,String> requestPathMappings = HttpServer.parseRequestPathMappings(args, 2);
+		final Map<String,String> requestPathMappings = args.length >= 3 
+			? HttpServer.parseRequestPathMappings(args, 2)
+			: new HashMap<String,String>();
 
 		try (HttpServer server = new HttpServer2(servicePort, contextPath, requestPathMappings)) {
 			System.out.println("HTTP server running on one acceptor thread, type \"quit\" to stop.");
