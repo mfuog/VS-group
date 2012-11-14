@@ -1,4 +1,4 @@
-package de.htw.ds.sync.myrtha;
+package de.htw.ds.sync;
 
 import java.io.FileOutputStream;
 import java.io.FileInputStream;
@@ -45,7 +45,7 @@ public final class FileCopyDistributedMine {
 		    int bytesRead;
 		    try {
 		    	//byteweise vom Inputstream lesen und in den Outputstream schreiben
-		    	//immer bei io darauf achten, dass nicht alle bufferinhalte gelesen werden sondern nur die die gefüllt waren
+		    	//immer bei io darauf achten, dass nicht alle bufferinhalte gelesen werden sondern nur die die gef��llt waren
 				while ((bytesRead = inputStream.read(buffer)) != -1){
 				    outputStream.write(buffer, 0, bytesRead);	//daher immer methode mit 3 parameter verwenden 
 				}

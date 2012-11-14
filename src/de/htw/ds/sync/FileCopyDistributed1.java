@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 package de.htw.ds.sync;
+=======
+package de.htw.ds.sync.myrtha;
+>>>>>>> e8571f9152b9780ec464505e18d7fb7142f2743a
 
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -39,7 +43,7 @@ public final class FileCopyDistributed1 {
 		final Runnable fileSourceTransporter = new Runnable() {
 			public void run() {
 				try {
-					Files.copy(sourcePath, pipedSink);
+					Files.copy(sourcePath, pipedSink);	//verschiedene Methode als das andere copy()
 				} catch (final Throwable exception) {
 					exception.printStackTrace();
 				} finally {
@@ -52,6 +56,7 @@ public final class FileCopyDistributed1 {
 		final Runnable fileSinkTransporter = new Runnable() {
 			public void run() {
 				try {
+					//verschiedene copy()-Methode als oben
 					Files.copy(pipedSource, sinkPath, StandardCopyOption.REPLACE_EXISTING);
 				} catch (final Throwable exception) {
 					exception.printStackTrace();
@@ -64,5 +69,7 @@ public final class FileCopyDistributed1 {
 		new Thread(fileSourceTransporter, "source-transporter").start();
 		new Thread(fileSinkTransporter, "sink-transporter").start();
 		System.out.println("two transporter threads started.");
+		//non-deamon-Threads -> halten Programm am laufen bis Input zu ende
+		//Automatisch beendet wenn Input fertig. Thread1 beendet thread2 indirekt auch
 	}
 }

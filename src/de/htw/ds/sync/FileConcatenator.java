@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 package de.htw.ds.sync;
+=======
+package de.htw.ds.sync.myrtha;
+>>>>>>> e8571f9152b9780ec464505e18d7fb7142f2743a
 
 import java.io.IOException;
 import java.io.InputStream;

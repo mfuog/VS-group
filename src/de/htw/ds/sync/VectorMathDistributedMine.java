@@ -1,4 +1,4 @@
-package de.htw.ds.sync.frauR;
+package de.htw.ds.sync;
 
 import java.util.Arrays;
 import de.htw.ds.TypeMetadata;
@@ -10,7 +10,7 @@ import de.htw.ds.TypeMetadata;
  * using one!</p>
  */
 @TypeMetadata(copyright="2008-2012 Sascha Baumeister, all rights reserved", version="1.0.0", authors="Sascha Baumeister")
-public final class VectorMathLinear {
+public final class VectorMathDistributedMine {
 	private static final int PROCESSOR_COUNT = Runtime.getRuntime().availableProcessors();
 
 
@@ -55,8 +55,9 @@ public final class VectorMathLinear {
 	 * @param args the argument array
 	 */
 	public static void main(final String[] args) {
-		final int dimension = args.length == 0 ? 10 : Integer.parseInt(args[0]);
+		final int dimension = args.length == 0 ? 10 : Integer.parseInt(args[0]);	//h��?
 
+		//...what for...?
 		final double[] a = new double[dimension], b = new double[dimension];
 		for (int index = 0; index < dimension; ++index) {
 			a[index] = index + 1.0;
@@ -74,6 +75,8 @@ public final class VectorMathLinear {
 		final long timestamp3 = System.currentTimeMillis();
 		System.out.format("a x b took %sms to compute.\n", timestamp3 - timestamp2);
 
+		System.out.format("dimension: %s \n���", dimension);
+		
 		if (dimension <= 100) {
 			System.out.print("a = ");
 			System.out.println(Arrays.toString(a));
