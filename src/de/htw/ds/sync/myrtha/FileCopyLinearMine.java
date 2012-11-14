@@ -12,7 +12,7 @@ import de.htw.ds.TypeMetadata;
  * <p>Demonstrates copying a file using a single thread.</p>
  */
 @TypeMetadata(copyright="2008-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
-public final class FileCopyLinear {
+public final class FileCopyLinearMine {
 
 	/**
 	 * Copies a file. The first argument is expected to be a qualified source file name,
