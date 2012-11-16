@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 package de.htw.ds.sync;
-=======
-package de.htw.ds.sync.myrtha;
->>>>>>> e8571f9152b9780ec464505e18d7fb7142f2743a
 
 import java.util.Arrays;
 import de.htw.ds.TypeMetadata;
@@ -27,6 +23,7 @@ public final class VectorMathLinear {
 	 * @throws IllegalArgumentException if the given parameters do not share the same length
 	 */
 	public static double[] add(final double[] leftOperand, final double[] rightOperand) {
+		System.out.println(leftOperand.length+"<-");
 		if (leftOperand.length != rightOperand.length) throw new IllegalArgumentException();
 		final double[] result = new double[leftOperand.length];
 		for (int index = 0; index < leftOperand.length; ++index) {
@@ -56,7 +53,7 @@ public final class VectorMathLinear {
 
 	/**
 	 * Runs both vector summation and vector multiplexing for demo purposes.
-	 * @param args the argument array
+	 * @param args the argument array. Is expected to be an number indicating the desired dimension of vectors a and b
 	 */
 	public static void main(final String[] args) {
 		final int dimension = args.length == 0 ? 10 : Integer.parseInt(args[0]);

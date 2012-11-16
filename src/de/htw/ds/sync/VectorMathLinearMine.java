@@ -55,8 +55,10 @@ public final class VectorMathLinearMine {
 	 * @param args the argument array
 	 */
 	public static void main(final String[] args) {
+		//use args as dimension for demo vectors a and b. if none given, use 10
 		final int dimension = args.length == 0 ? 10 : Integer.parseInt(args[0]);
 
+		//create demo vectors a and b and fill them with values
 		final double[] a = new double[dimension], b = new double[dimension];
 		for (int index = 0; index < dimension; ++index) {
 			a[index] = index + 1.0;
@@ -64,16 +66,21 @@ public final class VectorMathLinearMine {
 		}
 		System.out.format("Computation is performed on %s processor core(s):\n", PROCESSOR_COUNT);
 
+		//adding a and b
 		final long timestamp0 = System.currentTimeMillis();
 		final double[] sum = add(a, b);
 		final long timestamp1 = System.currentTimeMillis();
 		System.out.format("a + b took %sms to compute.\n", timestamp1 - timestamp0);
 
+		//multiplexing a and b
 		final long timestamp2 = System.currentTimeMillis();
 		final double[][] mux = mux(a, b);
 		final long timestamp3 = System.currentTimeMillis();
 		System.out.format("a x b took %sms to compute.\n", timestamp3 - timestamp2);
 
+		System.out.format("dimension: %s \n", dimension);
+		
+		//print out results
 		if (dimension <= 100) {
 			System.out.print("a = ");
 			System.out.println(Arrays.toString(a));

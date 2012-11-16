@@ -17,13 +17,13 @@ import de.htw.ds.TypeMetadata;
 /**
  * <p>Demonstrates copying a file by using a two threads.</p>
  */
-@TypeMetadata(copyright="2008-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
+@TypeMetadata(copyright="2008-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister Myrtha Fuog")
 public final class FileCopyDistributedMine {
 
 	/**
 	 * Transporter erweitert Runnable
 	 */
-	static class Transporter implements Runnable {	// static, damit Transporter angelegt werden kann ohne FileCopyDistributed zu instanziieren.	
+	static class Transporter implements Runnable {	// static, damit Transporter angelegt werden kann ohne FileCopyDistributedMine zu instanziieren.	
 
 		InputStream inputStream;
 		OutputStream outputStream;
@@ -41,20 +41,23 @@ public final class FileCopyDistributedMine {
 		 */
 		public void run() {
 			
-			byte[] buffer = new byte[ 1024 ]; // Adjust if you want
+			byte[] buffer = new byte[ 1024 ]; //buffer in dem die vom InputStream gelesene Information zwischengespeichert und vom OutputStream abgeholt wird
 		    int bytesRead;
 		    try {
 		    	//byteweise vom Inputstream lesen und in den Outputstream schreiben
-		    	//immer bei io darauf achten, dass nicht alle bufferinhalte gelesen werden sondern nur die die gef��llt waren
-				while ((bytesRead = inputStream.read(buffer)) != -1){
-				    outputStream.write(buffer, 0, bytesRead);	//daher immer methode mit 3 parameter verwenden 
+		    	//vgl. http://docs.oracle.com/javase/1.4.2/docs/api/java/io/OutputStream.html
+				while ((bytesRead = inputStream.read(buffer)) != -1){	//-1 = Stream am Ende
+			    	//immer bei io darauf achten, dass nicht ALLE Bufferinhalte gelesen werden sondern nur die die auch gefüllt waren:
+				    outputStream.write(buffer, 0, bytesRead);	//->daher immer write-Methode mit 3 parameter verwenden 
+				    //vgl .http://docs.oracle.com/javase/1.4.2/docs/api/java/io/InputStream.html
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			} finally {
-				try { outputStream.close();}	//muss wieder geschlossen werden.. siehe Transporter in util
-				catch (IOException e) { e.printStackTrace();} 
+				try 					{ outputStream.close();}	//muss wieder geschlossen werden.. siehe Transporter in util
+				catch (IOException e) 	{ e.printStackTrace();} 
 			}//finally END
+		    System.out.println("run()");
 		}//run() END
 		
 	}//Transporter class END
@@ -78,13 +81,13 @@ public final class FileCopyDistributedMine {
 		//--Variante 2: mit 2 Threads
 		//  vgl. http://openbook.galileocomputing.de/javainsel9/javainsel_17_007.htm
 		//PipeStreams verbinden => eine Pipe
-		PipedOutputStream pipedOutput = new PipedOutputStream();
-		PipedInputStream  pipedInput = new PipedInputStream();
-		pipedOutput.connect( pipedInput );
+		PipedOutputStream pipedSink = new PipedOutputStream();	//schreibt in die Pipe
+		PipedInputStream  pipedSource = new PipedInputStream();	//liest aus der Pipe
+		pipedSink.connect( pipedSource );
 		
 		//Threads verbinden (siehe Grafik pdf)
-		Thread thread1  = new Thread(new Transporter(input, pipedOutput));
-		Thread thread2  = new Thread(new Transporter(pipedInput, output));
+		Thread thread1  = new Thread(new Transporter(input, pipedSink));//das an Thread übergebene Runnable-Objekt bestimmt die run()-MEthode die bei Thread.start() verwendet wird!
+		Thread thread2  = new Thread(new Transporter(pipedSource, output));
 		
 		thread1.start();
 		thread2.start();

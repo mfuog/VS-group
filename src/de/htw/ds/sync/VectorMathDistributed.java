@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 package de.htw.ds.sync;
-=======
-package de.htw.ds.sync.myrtha;
->>>>>>> e8571f9152b9780ec464505e18d7fb7142f2743a
 
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
@@ -39,7 +35,7 @@ public final class VectorMathDistributed {
 	private static final int PROCESSOR_COUNT = Runtime.getRuntime().availableProcessors();
 	private static enum MuxDistributionMode { SECTOR, STRIPE, ROW, PERFECT }
 	private static final MuxDistributionMode MUX_IMPLEMENTATION = MuxDistributionMode.SECTOR;
-	private static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(PROCESSOR_COUNT);
+	private static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(PROCESSOR_COUNT);	//ThreadPool mit fixer Größe
 
 
 	/**
@@ -54,65 +50,49 @@ public final class VectorMathDistributed {
 	 * @throws IllegalArgumentException if the given parameters do not share the same length
 	 */
 	public static double[] add(final double[] leftOperand, final double[] rightOperand) {
-<<<<<<< HEAD
-		//Aufgabe der einzelnen Threads: Teile des Ergebnisses zu f��llen.
-=======
+
 		//Aufgabe der einzelnen Threads: Teile des Ergebnisses zu füllen.
->>>>>>> e8571f9152b9780ec464505e18d7fb7142f2743a
 		
 		if (leftOperand.length != rightOperand.length) throw new IllegalArgumentException();
 		final double[] result = new double[leftOperand.length];
-
 		final int sectorWidth = leftOperand.length / PROCESSOR_COUNT;	//Sektorbreite: Anzahl Elemente die von allen Threads MINDESTENS bearbeitet wird
-<<<<<<< HEAD
-		final int sectorThreshold = leftOperand.length % PROCESSOR_COUNT;//Modulo zwischen L��nge Ergebnis & Anzahl Prozessoren
-																		//Aussage: wieviele Elemente +1 ��benehmen (so ungef��hr xD)
-=======
 		final int sectorThreshold = leftOperand.length % PROCESSOR_COUNT;//Modulo zwischen Länge Ergebnis & Anzahl Prozessoren
-																		//Aussage: wieviele Elemente +1 übenehmen (so ungefähr xD)
->>>>>>> e8571f9152b9780ec464505e18d7fb7142f2743a
-																		//wenn Kernanzahl 2er Potenz..
+																		//Aussage: wieviele Elemente +1 übenehmen müssen(so ungefähr xD)
+																		//(wenn Kernanzahl 2er Potenz..)
 		final Semaphore indebtedSemaphore = new Semaphore(1 - PROCESSOR_COUNT);
 
 		for (int threadIndex = 0; threadIndex < PROCESSOR_COUNT; ++threadIndex) {
-			//wichtig, dass das heir (im main()) passiert und nicht in den Schleifen rumrechnen wann abgebrochen werden muss (unten)
+			//wichtig, dass das hier (im main()) passiert und nicht in den Schleifen rumrechnen wann abgebrochen werden muss (unten)
 			final int startIndex = threadIndex * sectorWidth + (threadIndex < sectorThreshold ? threadIndex : sectorThreshold);
 			final int stopIndex  = startIndex  + sectorWidth + (threadIndex < sectorThreshold ? 1 : 0);	//nicht mehr zu berechnen, exklusive
 			final Runnable runnable = new Runnable() {
 				public void run() {
-<<<<<<< HEAD
-					try {	//try/finally im release() rum, weil: weil Errors immer passieren k��nnten (zB outOfMemmory)
-=======
-					try {	//try/finally im release() rum, weil: weil Errors immer passieren könnten (zB outOfMemmory)
->>>>>>> e8571f9152b9780ec464505e18d7fb7142f2743a
+
+					try {	//try/finally im release() rum, weil Errors immer passieren könnten (zB outOfMemmory)
 						for (int index = startIndex; index < stopIndex; ++index) {
-							result[index] = leftOperand[index] + rightOperand[index];
+							result[index] = leftOperand[index] + rightOperand[index];	//doing the task: adding up
 						}
-					} finally {
-						indebtedSemaphore.release();
+					} finally {//finally weil: sonst bleibt Thread hängen, falls ein Fehler auftritt
+						indebtedSemaphore.release();	
 					}
 				}
 			};
-<<<<<<< HEAD
-			//unten: ersteres w��re eine ThreadPool-L��sung
-=======
+
 			//unten: ersteres wäre eine ThreadPool-Lösung
->>>>>>> e8571f9152b9780ec464505e18d7fb7142f2743a
-			// EXECUTOR_SERVICE.execute(runnable);							// uncomment for managed thread alternative!
-			new Thread(runnable).start();									// comment for managed thread alternative!
+			//EXECUTOR_SERVICE.execute(runnable);							// uncomment for managed thread alternative!
+			new Thread(runnable).start();
 		}
 
-<<<<<<< HEAD
-		//w��rde nie hier ankommen ohne obigen try catch bei error -> deadlog
-=======
 		//würde nie hier ankommen ohne obigen try catch bei error -> deadlog
->>>>>>> e8571f9152b9780ec464505e18d7fb7142f2743a
-		indebtedSemaphore.acquireUninterruptibly();
+		indebtedSemaphore.acquireUninterruptibly();	//lass dich nicht unterbrechen while acquire - warum soll das interruppted werden können? xD
+		//alternativ interrupt auffangen und acquire()
 		return result;
 	}
 
 
 	/**
+	 * vgl. http://de.wikipedia.org/wiki/Dyadisches_Produkt
+	 * 
 	 * Multiplexes two vectors, potentially distributing the work load into as many new child
 	 * threads as there are processor cores within a given system. In PERFECT mode, work
 	 * distribution is avoided whenever the result would be too small for distribution to be
@@ -193,13 +173,9 @@ public final class VectorMathDistributed {
 
 
 	/**
-<<<<<<< HEAD
-	 * Threads bearbeiten reihum alle Operationen. (durchz��hlen)
-	 * Nachteil: nicht optimiert auf Prozessoren f��r very-long-instructions-works (oder so)
-=======
+
 	 * Threads bearbeiten reihum alle Operationen. (durchzählen)
 	 * Nachteil: nicht optimiert auf Prozessoren für very-long-instructions-works (oder so)
->>>>>>> e8571f9152b9780ec464505e18d7fb7142f2743a
 	 * alles was auf einer superskalaren Pipeline basiert: klappt gut
 	 * 
 	 * Multiplexes two vectors, distributing the work load into as many new child threads as
@@ -245,15 +221,6 @@ public final class VectorMathDistributed {
 
 
 	/**
-<<<<<<< HEAD
-	 * F��r jedes Ergebnis ein neues Runnable f��r jedes Element im Ergebnisvektor
-	 * runnable verwenden mit executor-service. der wird aber NICHT f��r jedes Runnable einen thread ��ffnen, sondern sie in eine queque h��ngen
-	 * Runnable=Arbeitspakete hier, mit Thread-Pool
-	 * Witz dabei: L��sung genau so schnell wie die anderen beidne auch->effizient & einfach
-	 * t��dlicher Fehler dabei: f��r JEDES Element im Ergebnisvektor einen Thread erzeugen -> ev OutOfMemory Exception
-	 * weile f��r jeden thread Speicher reserviert werden muss!!
-	 * Obergrenze von gleichzeitig verf��gbaren Threads im Betriebssystem dadurch vorgegeben!
-=======
 	 * Für jedes Ergebnis ein neues Runnable für jedes Element im Ergebnisvektor
 	 * runnable verwenden mit executor-service. der wird aber NICHT für jedes Runnable einen thread öffnen, sondern sie in eine queque hängen
 	 * Runnable=Arbeitspakete hier, mit Thread-Pool
@@ -261,7 +228,7 @@ public final class VectorMathDistributed {
 	 * tödlicher Fehler dabei: für JEDES Element im Ergebnisvektor einen Thread erzeugen -> ev OutOfMemory Exception
 	 * weile für jeden thread Speicher reserviert werden muss!!
 	 * Obergrenze von gleichzeitig verfügbaren Threads im Betriebssystem dadurch vorgegeben!
->>>>>>> e8571f9152b9780ec464505e18d7fb7142f2743a
+	 *
 	 * 
 	 * Multiplexes two vectors, distributing the work load into as many new child threads as
 	 * there are matrix rows to be processed. This algorithm uses one thread per result row.

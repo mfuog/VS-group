@@ -1,14 +1,13 @@
-<<<<<<< HEAD
 package de.htw.ds.sync;
-=======
-package de.htw.ds.sync.myrtha;
->>>>>>> e8571f9152b9780ec464505e18d7fb7142f2743a
 
 import java.util.Random;
 import de.htw.ds.TypeMetadata;
 
 
 /**
+ * vgl http://pvs.uni-muenster.de/pvs/lehre/WS06/mnj/4-06.pdf
+ * ab S. 10
+ * 
  * <p>Demonstrates thread processing and thread re-synchronization using a runnable in conjunction
  * with (out-dated) monitor signaling. Note the need to take care of InterruptedExceptions.
  * Also note that any Object can be used as a synchronization monitor between threads!</p>
@@ -58,7 +57,7 @@ public final class ResyncThreadByMonitor {
 		final Object monitor = new Object();
 		final Reference<Throwable> exceptionReference = new Reference<>();
 
-		synchronized(monitor) {
+		synchronized(monitor) {//synchronisierter Block
 			for (int index = 0; index < threadCount; ++index) {
 				final Runnable runnable = new Runnable() {
 					public void run() {
@@ -68,7 +67,7 @@ public final class ResyncThreadByMonitor {
 						} catch (final Throwable exception) {
 							exceptionReference.put(exception);
 						} finally {
-							synchronized(monitor) { monitor.notify(); }
+							synchronized(monitor) { monitor.notify(); }	//weckt einen der schlafenden Threads, die auf dem Monitor dieses Objektes sind
 						}
 					}
 				};
@@ -82,9 +81,13 @@ public final class ResyncThreadByMonitor {
 					// Note that this mechanism is totally unreliable in case multiple
 					// threads notify the monitor at the same time, for example due to
 					// an exception that occurs rapidly in all child threads!
-					try { monitor.wait(); break; } catch (final InterruptedException exception) {}
+					try { 
+						monitor.wait(); //warten, bis ein anderer thread notify() auf das Monitor-Objekt aufruft
+						break;			//->Main-Thread läuft weiter: aus Endlosschleife raus!
+					}
+					catch (final InterruptedException exception) {}
 				}
-			}
+			}//nach threadCount-mal wait() und notify() (wegen for-Schleife), gehts endgültig weiter!
 		}
 
 		final Throwable exception = exceptionReference.get();
@@ -94,6 +97,6 @@ public final class ResyncThreadByMonitor {
 			if (exception instanceof InterruptedException) throw (InterruptedException) exception;
 			throw new AssertionError();
 		}
-		System.out.format("Java thread(s) resynchronized after %sms.\n", System.currentTimeMillis() - timestamp);
+		System.out.format("Java thread(s) resynchronized (with monitor) after %sms.\n", System.currentTimeMillis() - timestamp);
 	}
 }
