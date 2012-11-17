@@ -1,4 +1,4 @@
-package de.htw.ds.sync.frauR;
+package de.htw.ds.sync;
 
 public class MyRunnable implements Runnable {
 

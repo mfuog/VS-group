@@ -1,4 +1,4 @@
-package de.htw.ds.sync.frauR;
+package de.htw.ds.sync;
 
 public class ThreadDemo {
 
@@ -25,7 +25,7 @@ public class ThreadDemo {
 			}
 			
 		};
-		new Thread(runnable).start(); // NICHT run() -> sonst wird es parallel statt asyncron ausgef�hrt
+		new Thread(runnable).start(); // NICHT run() -> sonst wird es parallel statt asyncron ausgef���hrt
 		
 
 	}

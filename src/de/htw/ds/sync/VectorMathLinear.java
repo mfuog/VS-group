@@ -1,4 +1,4 @@
-package de.htw.ds.sync.frauR;
+package de.htw.ds.sync;
 
 import java.util.Arrays;
 import de.htw.ds.TypeMetadata;
