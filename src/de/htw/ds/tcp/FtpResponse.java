@@ -59,6 +59,9 @@ public final class FtpResponse {
 
 
 	/**
+	 * Returns a new FtpResponse Object which contains the ftp return code and message,
+	 * read from the given buffered reader.
+	 * 
 	 * Parses an FTP response from the given reader, and returns an instance of FtpResponse.
 	 * @param reader the reader
 	 * @return an instance of FtpResponse

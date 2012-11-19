@@ -4,7 +4,9 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.ProtocolException;
@@ -22,6 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import de.htw.ds.TypeMetadata;
+import de.htw.ds.util.BinaryTransporter;
 import de.htw.ds.util.SocketAddress;
 
 
@@ -30,10 +33,11 @@ import de.htw.ds.util.SocketAddress;
  * TCP connections, and the Java Logging API.</p>
  */
 @TypeMetadata(copyright="2011-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
-public final class FtpClientSkeleton implements Closeable {
+public final class FtpClient implements Closeable {
 	// workaround for Java7 bug initializing global logger without parent!
 	static { LogManager.getLogManager(); }
 
+	private static final int MAX_PACKET_SIZE = 0xFFFF;
 	private static enum Mode { STORE, RETRIEVE };
 
 	private final Socket controlConnection;
@@ -50,7 +54,7 @@ public final class FtpClientSkeleton implements Closeable {
 	 * @param binaryMode true for binary transmission, false for ASCII
 	 * @throws IOException if there is an I/O related problem
 	 */
-	public FtpClientSkeleton(final InetSocketAddress hostSocketAddress, final String alias, final String password, final boolean binaryMode) throws IOException {
+	public FtpClient(final InetSocketAddress hostSocketAddress, final String alias, final String password, final boolean binaryMode) throws IOException {
 		super();
 
 		this.controlConnection = new Socket(hostSocketAddress.getHostName(), hostSocketAddress.getPort());
@@ -128,26 +132,40 @@ public final class FtpClientSkeleton implements Closeable {
 	 * @throws NullPointerException if the target directory is null
 	 * @throws NotDirectoryException if the source or target directory does not exist
 	 * @throws NoSuchFileException if the source file does not exist
- 	 * @throws IOException if there is an I/O related problem
+	 * @throws AccessDeniedException if the source file cannot be read, or
+	 *    the sink directory cannot be written
+	 * @throws IOException if there is an I/O related problem
 	 */
 	public synchronized void retrieve(final Path sourceFile, final Path sinkDirectory) throws IOException {
 		if (!Files.isDirectory(sinkDirectory)) throw new NotDirectoryException(sinkDirectory.toString());
 
-		System.out.println("retrieve");
-		// TODO: If the source file parent is not null, issue a CWD message to the FTP server,
-		// setting it's current working directory to the source file parent. Send a PASV
-		// message to query the socket-address to be used for the data transfer.
-		// You can use parseSocketAddress() to parse the socket-address from the response.
-		// Open a data connection to the socket-address using "new Socket(host, port)".
-		// Send a RETR message over the control connection. After receiving the first part
-		// of it's response (code 150), transport the content of the data connection's INPUT
-		// stream to the target file, closing it once there is no more data. Then receive the
-		// second part of the RETR response (code 226). Make sure the source file and the data
-		// connection are closed in any case.
-		
-		
-		
-		
+		FtpResponse ftpResponse;
+		try (OutputStream fileSink = Files.newOutputStream(sinkDirectory.resolve(sourceFile.getFileName()))) {
+			if (sourceFile.getParent() != null) {
+				ftpResponse = this.processFtpRequest("CWD " + sourceFile.getParent().toString().replace('\\', '/'));
+				if (ftpResponse.getCode() != 250) throw new NotDirectoryException(sourceFile.toString());
+			}
+
+			ftpResponse = this.processFtpRequest("PASV");
+			if (ftpResponse.getCode() != 227) throw new ProtocolException(ftpResponse.toString());
+			final InetSocketAddress socketAddress;
+			try {
+				socketAddress = parseSocketAddress(ftpResponse.getMessage());
+			} catch (final IllegalArgumentException exception) {
+				throw new ProtocolException(exception.getMessage());
+			}
+
+			try (Socket dataConnection = new Socket(socketAddress.getAddress(), socketAddress.getPort())) {
+				ftpResponse = this.processFtpRequest("RETR " + sourceFile.getFileName());
+				if (ftpResponse.getCode() == 550) throw new NoSuchFileException(ftpResponse.toString());
+				if (ftpResponse.getCode() != 150) throw new ProtocolException(ftpResponse.toString());
+				new BinaryTransporter(false, MAX_PACKET_SIZE, dataConnection.getInputStream(), fileSink).call();
+			}
+		}
+
+		ftpResponse = FtpResponse.parse(this.controlConnectionSource);
+		Logger.getGlobal().log(Level.INFO, ftpResponse.toString());
+		if (ftpResponse.getCode() != 226) throw new ProtocolException(ftpResponse.toString());
 	}
 
 
@@ -166,16 +184,33 @@ public final class FtpClientSkeleton implements Closeable {
 	public synchronized void store(final Path sourceFile, final Path sinkDirectory) throws IOException {
 		if (!Files.isReadable(sourceFile)) throw new NoSuchFileException(sourceFile.toString());
 
-		// TODO: If the target directory is not null, issue a CWD message to the FTP server,
-		// setting it's current working directory to the target directory. Send a PASV
-		// message to query the socket-address to be used for the data transfer.
-		// You can use parseSocketAddress() to parse the socket-address from the response.
-		// Open a data connection to the socket-address using "new Socket(host, port)".
-		// Send a STOR message over the control connection. After receiving the first part of
-		// it's response (code 150), transport the source file content to the data connection's
-		// OUTPUT stream, closing it once there is no more data. Then receive the second part
-		// of the STOR response (code 226) on the control connection. Make sure the source file
-		// and the data connection are closed in any case.
+		FtpResponse ftpResponse;
+		try (InputStream fileSource = Files.newInputStream(sourceFile)) {
+			if (!sinkDirectory.toString().isEmpty()) {
+				ftpResponse = this.processFtpRequest("CWD " + sinkDirectory.toString().replace('\\', '/'));
+				if (ftpResponse.getCode() != 250) throw new NotDirectoryException(sinkDirectory.toString());
+			}
+
+			ftpResponse = this.processFtpRequest("PASV");
+			if (ftpResponse.getCode() != 227) throw new ProtocolException(ftpResponse.toString());
+			final InetSocketAddress socketAddress;
+			try {
+				socketAddress = parseSocketAddress(ftpResponse.getMessage());
+			} catch (final IllegalArgumentException exception) {
+				throw new ProtocolException(exception.getMessage());
+			}
+
+			try (Socket dataConnection = new Socket(socketAddress.getAddress(), socketAddress.getPort())) {
+				ftpResponse = this.processFtpRequest("STOR " + sourceFile.getFileName());
+				if (ftpResponse.getCode() == 550) throw new AccessDeniedException(ftpResponse.toString());
+				if (ftpResponse.getCode() != 150) throw new ProtocolException(ftpResponse.toString());
+				new BinaryTransporter(false, MAX_PACKET_SIZE, fileSource, dataConnection.getOutputStream()).call();
+			}
+		}
+
+		ftpResponse = FtpResponse.parse(this.controlConnectionSource);
+		Logger.getGlobal().log(Level.INFO, ftpResponse.toString());
+		if (ftpResponse.getCode() != 226) throw new ProtocolException(ftpResponse.toString());
 	}
 
 
@@ -186,7 +221,6 @@ public final class FtpClientSkeleton implements Closeable {
 	 * @throws NullPointerException if the given PASV message is null
 	 * @throws IllegalArgumentException if the PASV response message is not properly formatted
 	 */
-	@SuppressWarnings("unused")	// TODO: Remove this if you use this method
 	private static InetSocketAddress parseSocketAddress(final String pasvResponseMessage) {
 		final int beginIndex = pasvResponseMessage.lastIndexOf('(');
 		final int endIndex = pasvResponseMessage.lastIndexOf(')');
@@ -219,10 +253,7 @@ public final class FtpClientSkeleton implements Closeable {
 	 * @throws IOException if the given port is already in use
 	 */
 	public static void main(final String[] args) throws IOException {
-		
-			
-		final SocketAddress socketAddress = new SocketAddress(args[0]);
-		final InetSocketAddress hostAddress = socketAddress.toInetSocketAddress();
+		final InetSocketAddress hostAddress = new SocketAddress(args[0]).toInetSocketAddress();
 		final String alias = args[1];
 		final String password = args[2];
 		final boolean binaryMode = Boolean.parseBoolean(args[3]);
@@ -230,16 +261,16 @@ public final class FtpClientSkeleton implements Closeable {
 		final Path sourcePath = Paths.get(args[5]).normalize();
 		final Path targetPath = Paths.get(args[6]).normalize();
 
-		try (FtpClientSkeleton client = new FtpClientSkeleton(hostAddress, alias, password, binaryMode)) {
+		try (FtpClient client = new FtpClient(hostAddress, alias, password, binaryMode)) {
 			switch (mode) {
-				case RETRIEVE: {
+				case RETRIEVE:
 					client.retrieve(sourcePath, targetPath);
 					break;
-				}
-				case STORE: {
+				case STORE:
 					client.store(sourcePath, targetPath);
 					break;
-				}
+				default:
+					throw new AssertionError();
 			}
 		}
 	}
