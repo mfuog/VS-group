@@ -93,7 +93,7 @@ public final class FtpClientMine implements Closeable {
 		final FtpResponse ftpResponse = FtpResponse.parse(this.controlConnectionSource);
 		
 		//log the ftp response to the console
-		Logger.getGlobal().log(Level.INFO, ftpResponse.getCode()+" "+ftpResponse.getMessage());	
+		Logger.getGlobal().log(Level.INFO, ftpResponse.getCode()+" - "+ftpResponse.getMessage());	
 		
 		return ftpResponse;
 	}
@@ -155,6 +155,9 @@ public final class FtpClientMine implements Closeable {
 	 * server side and must therefore be a relative path (relative to the FTP server context
 	 * directory), while the target directory resides on the client side and can be a global
 	 * path.
+	 * 
+	 * ariel.f4.htw-berlin.de:21 s0530278 password false RETRIEVE /home/05/30278/Documents/test.txt /Users/myrthafuog/Desktop
+	 * 
 	 * @param sourceFile the source file (server side)
 	 * @param sinkDirectory the sink directory (client side)
 	 * @throws NullPointerException if the target directory is null
@@ -174,26 +177,25 @@ public final class FtpClientMine implements Closeable {
 			
 			InetSocketAddress serverSocketAddress = this.parseSocketAddress(ftpResponse.toString());				//parse the socket-address from the response.
 			Socket dataConnection = new Socket(serverSocketAddress.getAddress(), serverSocketAddress.getPort());	// Open a data connection to the socket-address using "new Socket(host, port)".
-			
-			ftpResponse = processFtpRequest("RETR "+sourceFile.toString());	// Send a RETR message over the control connection (=get source file)
+
+			ftpResponse = processFtpRequest("RETR "+sourceFile.toString());	// Send a RETR message over the control connection (=get source file).
+			//getFileName()(nut fileName) oder toString()(FileName mit komplettem Pfad) geht, weil working directory eh schon gesetzt ist durch CWD
 			
 			// After receiving the first part of it's response (code 150),
 			//TODO...?
 			
 			//copy filename: sourceFile.getFileName()
-			try ( OutputStream sink = Files.newOutputStream(sinkDirectory.resolve("copiedFile.txt"), StandardOpenOption.CREATE))
+			try ( OutputStream sink = Files.newOutputStream(sinkDirectory.resolve("retrievedFromServer.txt"), StandardOpenOption.CREATE))//vgl. http://openbook.galileocomputing.de/java7/1507_05_003.html
 			{
 				// transport the content of the data connection's INPUT stream to the target file, using BinaryTransporter
 				new BinaryTransporter(true, MAX_PACKET_SIZE, dataConnection.getInputStream(), sink).call();	//Transporter.call() transportiert daten von source to sink und schließt Ressource
-				Logger.getGlobal().log(Level.INFO, ftpResponse.getCode()+" "+ftpResponse.getMessage());
+				//vgl. http://tamanmohamed.blogspot.de/2012/05/jdk7-using-buffered-io-for-files-in.html
 				// closing it once there is no more data. - macht BinaryTransporter!
 			}
 			catch ( IOException e ){e.printStackTrace();}
 	
 			ftpResponse = FtpResponse.parse(this.controlConnectionSource);	//update ftpResponse
-			Logger.getGlobal().log(Level.INFO, ftpResponse.getCode()+" "+ftpResponse.getMessage());
-			
-			Logger.getGlobal().log(Level.INFO, ftpResponse.getCode()+" "+ftpResponse.getMessage());
+			Logger.getGlobal().log(Level.INFO, ftpResponse.getCode()+" - "+ftpResponse.getMessage());			
 		}
 	}
 
@@ -214,14 +216,37 @@ public final class FtpClientMine implements Closeable {
 		System.out.println("source: "+sourceFile);
 		System.out.println("sink: "+sinkDirectory);
 		
+		//TODO: exceptions & responses abfangen.. xD
+		
 		if (!Files.isReadable(sourceFile)) throw new NoSuchFileException(sourceFile.toString());
 
+		if(sourceFile.getParent()!=null){
+			
+			FtpResponse ftpResponse = this.processFtpRequest("CWD "+sinkDirectory);
+			
+			ftpResponse = this.processFtpRequest("PASV");
+			
+			InetSocketAddress serverSocketAddress = parseSocketAddress(ftpResponse.getMessage());	//get server address
+			Socket dataConnectionServer = new Socket(serverSocketAddress.getAddress(), serverSocketAddress.getPort());	//open socket on server(=data connection)
+			
+			ftpResponse = this.processFtpRequest("STOR copiedFromClient.txt");//"+sinkDirectory+"/"+sourceFile.getFileName());//sinkDirectory optional
+			if(ftpResponse.getCode()==150){	//150: File status okay; about to open data connection.
+				
+				new BinaryTransporter(true, 0xFFFF, Files.newInputStream(sourceFile),dataConnectionServer.getOutputStream()).call();
+			}
+		}
+		
+		
+		
+		
 		// TODO: If the target directory is not null, issue a CWD message to the FTP server,
-		// setting it's current working directory to the target directory. Send a PASV
+		// setting it's current working directory to the target directory.
+		// Send a PASV
 		// message to query the socket-address to be used for the data transfer.
 		// You can use parseSocketAddress() to parse the socket-address from the response.
 		// Open a data connection to the socket-address using "new Socket(host, port)".
-		// Send a STOR message over the control connection. After receiving the first part of
+		// Send a STOR message over the control connection.
+		// After receiving the first part of
 		// it's response (code 150),
 		// transport the source file content to the data connection's
 		// OUTPUT stream, closing it once there is no more data. Then receive the second part
