@@ -2,6 +2,7 @@ package de.htw.ds.tcp;
 
 import java.io.BufferedReader;
 import java.io.Closeable;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -15,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -27,6 +29,7 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import de.htw.ds.TypeMetadata;
 import de.htw.ds.util.BinaryTransporter;
+import de.htw.ds.util.MultiOutputStream;
 import de.htw.ds.util.SocketAddress;
 
 
@@ -171,6 +174,7 @@ public final class TcpMonitorMine implements Runnable, Closeable {
 			final Path requestLogPath = TcpMonitorMine.this.contextPath.resolve(String.format(LOG_FILE_PATTERN, connectionID, "request"));
 			final Path responseLogPath = TcpMonitorMine.this.contextPath.resolve(String.format(LOG_FILE_PATTERN, connectionID, "response"));
 
+			
 			// TODO: Transport all content from the client connection's input stream into
 			// both the server connection's output stream and an output stream created for
 			// the respective request/response log file, and vice versa. You'll need to
@@ -189,8 +193,30 @@ public final class TcpMonitorMine implements Runnable, Closeable {
 
 			try (Socket serverConnection = new Socket(TcpMonitorMine.this.forwardAddress.getAddress(), TcpMonitorMine.this.forwardAddress.getPort()))
 			{
+				// a) 2x Threads mit je einem Binary Transporter
+				// b) Mulitoutstreams an BT mit je Logfile-/Server- oder Client-Stream
+				// c) tansporter.call()
+				// auf Exceptions reagieren umd Streams schliessen
+				
+				InputStream requestStreamFromClient = clientConnection.getInputStream();
+				OutputStream responseStreamToClient = clientConnection.getOutputStream();
+				
+				InputStream responseStreamFromServer = serverConnection.getInputStream();
+				OutputStream requestStreamToServer = serverConnection.getOutputStream();
+				
+				//FileInputStream responseStreamToFile = new FileInputStream(newFilerequestLogPath);
+				
+				//Socket dataConnection = new Socket(serverSocketAddress.getAddress(), serverSocketAddress.getPort());
+				OutputStream requestStreamToLog = Files.newOutputStream(requestLogPath);
+				OutputStream responseStreamToLog = Files.newOutputStream(responseLogPath);
+				
+				MultiOutputStream requestStreams = new MultiOutputStream(requestStreamToServer, requestStreamToLog);
+				MultiOutputStream responseStreams = new MultiOutputStream(responseStreamToClient, responseStreamToLog);
 				
 				
+				new BinaryTransporter(true, 0xFF, requestStreamFromClient, requestStreams).call();
+				new BinaryTransporter(true, 0xFF, responseStreamFromServer, responseStreams).call();
+							
 				
 			}
 			catch (final Throwable exception) {
