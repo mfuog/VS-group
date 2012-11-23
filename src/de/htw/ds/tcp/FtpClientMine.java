@@ -169,7 +169,9 @@ public final class FtpClientMine implements Closeable {
 		System.out.println("source: "+sourceFile);
 		System.out.println("sink: "+sinkDirectory);
 		if (!Files.isDirectory(sinkDirectory)) throw new NotDirectoryException(sinkDirectory.toString());
-				
+		
+		//TODO: exceptions & responses abfangen.. xD
+		
 		if(sourceFile.getParent()!=null){	//Warum?
 			
 			FtpResponse ftpResponse = processFtpRequest("CWD "+sourceFile.getParent());	//issue a CWD message to the FTP server, setting it's current working directory to the source file parent
@@ -262,8 +264,8 @@ public final class FtpClientMine implements Closeable {
 	 * Parses a socket-address from a code 227 response to a PASV command.
 	 * @param pasvResponseMessage the PASV response message
 	 * @return a socket-address
-	 * @throws NullPointerException if the given PASV message is null
-	 * @throws IllegalArgumentException if the PASV response message is not properly formatted
+	 * @throws NullPointerException if the given PASV message is null (runtime exception)
+	 * @throws IllegalArgumentException if the PASV response message is not properly formatted (runtime exception)
 	 */
 	//@SuppressWarnings("unused")	// TODO: Remove this if you use this method
 	private static InetSocketAddress parseSocketAddress(final String pasvResponseMessage) {

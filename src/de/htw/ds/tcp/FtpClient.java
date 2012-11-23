@@ -185,7 +185,7 @@ public final class FtpClient implements Closeable {
 		if (!Files.isReadable(sourceFile)) throw new NoSuchFileException(sourceFile.toString());
 
 		FtpResponse ftpResponse;
-		try (InputStream fileSource = Files.newInputStream(sourceFile)) {
+		try (InputStream fileSource = Files.newInputStream(sourceFile)) {	//new in Java 7 -> kein catch weil stream automatisch geschloßen wird (Closable) 
 			if (!sinkDirectory.toString().isEmpty()) {
 				ftpResponse = this.processFtpRequest("CWD " + sinkDirectory.toString().replace('\\', '/'));
 				if (ftpResponse.getCode() != 250) throw new NotDirectoryException(sinkDirectory.toString());
@@ -197,7 +197,7 @@ public final class FtpClient implements Closeable {
 			try {
 				socketAddress = parseSocketAddress(ftpResponse.getMessage());
 			} catch (final IllegalArgumentException exception) {
-				throw new ProtocolException(exception.getMessage());
+				throw new ProtocolException(exception.getMessage());//...?
 			}
 
 			try (Socket dataConnection = new Socket(socketAddress.getAddress(), socketAddress.getPort())) {

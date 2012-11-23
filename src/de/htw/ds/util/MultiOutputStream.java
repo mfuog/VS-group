@@ -25,10 +25,10 @@ public class MultiOutputStream extends OutputStream {
 	 * sinks given is ignored.
 	 * @param sinks the data sinks
 	 */
-	public MultiOutputStream(final OutputStream... sinks) {
+	public MultiOutputStream(final OutputStream... sinks) {	//varargs
 		super();
 
-		this.sinks = new ArrayList<>();
+		this.sinks = new ArrayList<>();	//warum überschreiben???
 		if (sinks != null) {
 			for (final OutputStream sink : sinks) {
 				if (sink != null) this.sinks.add(sink);
