@@ -28,8 +28,8 @@ public class MultiOutputStream extends OutputStream {
 	public MultiOutputStream(final OutputStream... sinks) {	//varargs
 		super();
 
-		this.sinks = new ArrayList<>();	//warum überschreiben???
-		if (sinks != null) {
+		this.sinks = new ArrayList<>();	//this.sinks -> instanzvariabel
+		if (sinks != null) {			//sinks = parameter-Array
 			for (final OutputStream sink : sinks) {
 				if (sink != null) this.sinks.add(sink);
 			}
@@ -47,7 +47,7 @@ public class MultiOutputStream extends OutputStream {
 
 		for (final OutputStream sink : this.sinks) {
 			try {
-				sink.close();
+				sink.close();//jede resource einzeln schließen, jede kann exception auslösen
 			} catch (final IOException e) {
 				exception = e;
 			}
