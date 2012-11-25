@@ -3,10 +3,8 @@ package de.htw.ds.tcp;
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.InetSocketAddress;
@@ -21,12 +19,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import de.htw.ds.TypeMetadata;
 import de.htw.ds.util.BinaryTransporter;
+import de.htw.ds.util.MultiOutputStream;
 import de.htw.ds.util.SocketAddress;
 
 
@@ -35,8 +33,7 @@ import de.htw.ds.util.SocketAddress;
  * information between two ports, while logging it at the same time.</p>
  */
 @TypeMetadata(copyright="2008-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
-@SuppressWarnings("unused")	//TODO: remove this line
-public final class TcpMonitorSkeleton implements Runnable, Closeable {
+public final class TcpMonitor implements Runnable, Closeable {
 	// workaround for Java7 bug initializing global logger without parent!
 	static { LogManager.getLogManager(); }
 
@@ -61,15 +58,15 @@ public final class TcpMonitorSkeleton implements Runnable, Closeable {
 	 * @throws IOException if the given port is already in use, or cannot be bound,
 	 *    or the given context path is not a directory
 	 */
-	public TcpMonitorSkeleton(final int servicePort, final InetSocketAddress forwardAddress, final Path contextPath) throws IOException {
+	public TcpMonitor(final int servicePort, final InetSocketAddress forwardAddress, final Path contextPath) throws IOException {
 		super();
 		if (forwardAddress == null) throw new NullPointerException();
 		if (!Files.isDirectory(contextPath)) throw new NotDirectoryException(contextPath.toString());
 
-		this.serviceSocket = new ServerSocket(servicePort);
-		this.executorService = Executors.newCachedThreadPool();
-		this.forwardAddress = forwardAddress;
 		this.contextPath = contextPath;
+		this.executorService = Executors.newCachedThreadPool();
+		this.serviceSocket = new ServerSocket(servicePort);
+		this.forwardAddress = forwardAddress;
 
 		final Thread thread = new Thread(this, "tcp-acceptor");
 		thread.setDaemon(true);
@@ -121,7 +118,7 @@ public final class TcpMonitorSkeleton implements Runnable, Closeable {
 		final Path contextPath = Paths.get(args[1]).normalize();
 		final InetSocketAddress forwardAddress = new SocketAddress(args[2]).toInetSocketAddress();
 
-		try (TcpMonitorSkeleton server = new TcpMonitorSkeleton(servicePort, forwardAddress, contextPath)) {
+		try (TcpMonitor server = new TcpMonitor(servicePort, forwardAddress, contextPath)) {
 			// print welcome message
 			System.out.println("TCP monitor running on one acceptor thread, type \"quit\" to stop.");
 			System.out.format("Service port is %s.\n", server.serviceSocket.getLocalPort());
@@ -164,31 +161,31 @@ public final class TcpMonitorSkeleton implements Runnable, Closeable {
 		 */
 		public void run() {
 			final String connectionID = String.format(CONNECTION_ID_PATTERN, System.currentTimeMillis(), RANDOMIZER.nextInt(1000000));
-			final Path requestLogPath = TcpMonitorSkeleton.this.contextPath.resolve(String.format(LOG_FILE_PATTERN, connectionID, "request"));
-			final Path responseLogPath = TcpMonitorSkeleton.this.contextPath.resolve(String.format(LOG_FILE_PATTERN, connectionID, "response"));
-
-			// TODO: Transport all content from the client connection's input stream into
-			// both the server connection's output stream and an output stream created for
-			// the respective request/response log file, and vice versa. You'll need to
-			// open output streams for the log files first, and exceptions should be logged
-			// using the class's logger.
-			// Note that you'll need 1-2 new transporter threads to complete this tasks, as
-			// you cannot foresee if the client or the server closes the connection, or if
-			// the protocol communicated involves handshakes. Either case implies you'd
-			// end up reading "too much" if you try to transport both communication directions
-			// within this thread, creating a deadlock scenario!
-			// Especially make sure that all connections and files are properly closed in
-			// any circumstances! Note that closing one socket stream closes the underlying
-			// socket connection as well. Also note that a SocketInputStream's read() method
-			// will throw a SocketException when interrupted while blocking, which is "normal"
-			// behavior and should be handled as if the read() Method returned -1!
+			final Path requestLogPath = TcpMonitor.this.contextPath.resolve(String.format(LOG_FILE_PATTERN, connectionID, "request"));
+			final Path responseLogPath = TcpMonitor.this.contextPath.resolve(String.format(LOG_FILE_PATTERN, connectionID, "response"));
 
 			try (
-				Socket serverConnection = new Socket(TcpMonitorSkeleton.this.forwardAddress.getAddress(), TcpMonitorSkeleton.this.forwardAddress.getPort())
+				Socket serverConnection = new Socket(TcpMonitor.this.forwardAddress.getAddress(), TcpMonitor.this.forwardAddress.getPort());
+				OutputStream requestSink = new MultiOutputStream(serverConnection.getOutputStream(), Files.newOutputStream(requestLogPath));
+				OutputStream responseSink = new MultiOutputStream(this.clientConnection.getOutputStream(), Files.newOutputStream(responseLogPath));
 			) {
+				final Callable<Long> requestTransporter = new BinaryTransporter(true, MAX_PACKET_SIZE, this.clientConnection.getInputStream(), requestSink);
+				final Callable<Long> responseTransporter = new BinaryTransporter(true, MAX_PACKET_SIZE, serverConnection.getInputStream(), responseSink);
 
+				final Future<Long> requestFuture = TcpMonitor.this.executorService.submit(requestTransporter);
+				final Future<Long> responseFuture = TcpMonitor.this.executorService.submit(responseTransporter);
+
+				try {
+					final long requestBytes = requestFuture.get();
+					final long responseBytes = responseFuture.get(); 
+					Logger.getGlobal().log(Level.INFO, "Connection {0} transported {1} request bytes and {2} response bytes.", new Object[] { connectionID, requestBytes, responseBytes });
+				} catch (final ExecutionException exception) {
+					throw exception.getCause();
+				}
 			} catch (final Throwable exception) {
 				Logger.getGlobal().log(Level.WARNING, exception.getMessage(), exception);
+			} finally {
+				try { this.clientConnection.close(); } catch (final Throwable exception) {}
 			}
 		}
 	}
