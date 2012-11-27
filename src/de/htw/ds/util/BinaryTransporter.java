@@ -75,13 +75,22 @@ public class BinaryTransporter implements Runnable, Callable<Long> {
 				this.sink.write(buffer, 0, bytesRead);
 				result += bytesRead;
 			}
+			
+			// andere schreibweise:
+//			int bytesRead = this.source.read(buffer);
+//			while( bytesRead != -1){
+//				this.sink.write(buffer, 0, bytesRead);
+//				result += bytesRead;
+//				bytesRead = this.source.read(buffer);
+//			}
+			
 		} catch (final SocketException exception) {
 			// treat as EOF because a TCP stream has been closed by the other side
 		} finally {
-			//was passiert wenn beim schließen ein fehler auftaucht?
-			//garantieren, dass jede geöffnete ressource die geöffnet wird geschlossen wird, egal was passiert
+			//was passiert wenn beim schlie��en ein fehler auftaucht?
+			//garantieren, dass jede ge��ffnete ressource die ge��ffnet wird geschlossen wird, egal was passiert
 			//--> darum IMMER in try/catch
-			//resynchronisieren nur zum schließen einer ressource ist unschön (wegen warten). Lieber hier ressource schließen
+			//resynchronisieren nur zum schlie��en einer ressource ist unsch��n (wegen warten). Lieber hier ressource schlie��en
 			if (this.closeUponCompletion) {
 				try { this.source.close(); } catch (final Throwable exception) {}
 				try { this.sink.close(); } catch (final Throwable exception) {}

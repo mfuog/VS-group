@@ -29,6 +29,7 @@ public class MultiOutputStream extends OutputStream {
 		super();
 
 		this.sinks = new ArrayList<>();
+		// nicht die liste wird überschrieben sondern er Name --> man brauch nicht ständig neue Parameternamen vergeben :: dank "this."
 		if (sinks != null) {
 			for (final OutputStream sink : sinks) {
 				if (sink != null) this.sinks.add(sink);
@@ -50,6 +51,9 @@ public class MultiOutputStream extends OutputStream {
 				sink.close();
 			} catch (final IOException e) {
 				exception = e;
+				// sammel alle exception 
+				// aber nur die letzte wird geworfen, 
+				// stellt aber sicher , dass alles geschlossen wird
 			}
 		}
 		this.sinks.clear();
