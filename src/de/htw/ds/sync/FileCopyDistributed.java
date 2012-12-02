@@ -1,4 +1,4 @@
-package de.htw.ds.sync.marian;
+package de.htw.ds.sync;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;

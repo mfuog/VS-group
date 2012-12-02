@@ -17,7 +17,7 @@ import de.htw.ds.TypeMetadata;
  */
 @TypeMetadata(copyright="2008-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
 public final class FileCopyDistributed1 {
-	private static final int BUFFER_LENGTH = 0x100000;
+	private static final int BUFFER_LENGTH = 0x100000;	//Frage: warum Buffer_legth definieren...?
 
 	/**
 	 * Copies a file. The first argument is expected to be a qualified source file name,
@@ -26,33 +26,35 @@ public final class FileCopyDistributed1 {
 	 * @throws IOException if there's an I/O related problem
 	 */
 	public static void main(final String[] args) throws IOException {
-		final Path sourcePath = Paths.get(args[0]);
+		final Path sourcePath = Paths.get(args[0]);	//quellpfad
 		if (!Files.isReadable(sourcePath)) throw new IllegalArgumentException(sourcePath.toString());
 
-		final Path sinkPath = Paths.get(args[1]);
+		final Path sinkPath = Paths.get(args[1]);	//zielpfad
 		if (sinkPath.getParent() != null && !Files.isDirectory(sinkPath.getParent())) throw new IllegalArgumentException(sinkPath.toString());
 
 		// create inter-thread pipe
-		final PipedInputStream pipedSource = new PipedInputStream(BUFFER_LENGTH);
-		final PipedOutputStream pipedSink = new PipedOutputStream(pipedSource);
+		final PipedInputStream pipedSource = new PipedInputStream(BUFFER_LENGTH);	//liest aus Pipe
+		final PipedOutputStream pipedSink = new PipedOutputStream(pipedSource);		//schreibt auf Pipe
 
-		final Runnable fileSourceTransporter = new Runnable() {
+		final Runnable fileSourceTransporter = new Runnable() {//anonyme innere Klasse, überschreibt run()
 			public void run() {
 				try {
+					//2 Parameter: copy all bytes from a file to an output stream
 					Files.copy(sourcePath, pipedSink);
 				} catch (final Throwable exception) {
 					exception.printStackTrace();
-				} finally {
-					try { pipedSink.close(); } catch (final Throwable exception) {}
+				} finally {	//file zu Ende
+					try { pipedSink.close();} catch (final Throwable exception) {}
 				}
 			}
 		};
 
-		// start threads
-		final Runnable fileSinkTransporter = new Runnable() {
+		
+		final Runnable fileSinkTransporter = new Runnable() {//anonyme innere Klasse, überschreibt run() 
 			public void run() {
 				try {
-					Files.copy(pipedSource, sinkPath, StandardCopyOption.REPLACE_EXISTING);
+					//3 Parameter: copy all bytes from input stream to a file
+					Files.copy(pipedSource, sinkPath, StandardCopyOption.REPLACE_EXISTING);	
 				} catch (final Throwable exception) {
 					exception.printStackTrace();
 				} finally {
@@ -61,8 +63,12 @@ public final class FileCopyDistributed1 {
 			}
 		};
 
+		// start threads
+		//(non-deamon-Threads -> halten Programm am laufen bis Input zu ende ist)
 		new Thread(fileSourceTransporter, "source-transporter").start();
 		new Thread(fileSinkTransporter, "sink-transporter").start();
 		System.out.println("two transporter threads started.");
+		
+		//Automatisch beendet wenn Input fertig. Thread1 beendet Thread2 indirekt auch
 	}
 }

@@ -35,7 +35,7 @@ public final class VectorMathDistributed {
 	private static final int PROCESSOR_COUNT = Runtime.getRuntime().availableProcessors();
 	private static enum MuxDistributionMode { SECTOR, STRIPE, ROW, PERFECT }
 	private static final MuxDistributionMode MUX_IMPLEMENTATION = MuxDistributionMode.SECTOR;
-	private static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(PROCESSOR_COUNT);
+	private static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(PROCESSOR_COUNT);	//ThreadPool mit fixer Größe
 
 
 	/**
@@ -50,37 +50,49 @@ public final class VectorMathDistributed {
 	 * @throws IllegalArgumentException if the given parameters do not share the same length
 	 */
 	public static double[] add(final double[] leftOperand, final double[] rightOperand) {
+
+		//Aufgabe der einzelnen Threads: Teile des Ergebnisses zu füllen.
+		
 		if (leftOperand.length != rightOperand.length) throw new IllegalArgumentException();
 		final double[] result = new double[leftOperand.length];
-
-		final int sectorWidth = leftOperand.length / PROCESSOR_COUNT;
-		final int sectorThreshold = leftOperand.length % PROCESSOR_COUNT;
+		final int sectorWidth = leftOperand.length / PROCESSOR_COUNT;	//Sektorbreite: Anzahl Elemente die von allen Threads MINDESTENS bearbeitet wird
+		final int sectorThreshold = leftOperand.length % PROCESSOR_COUNT;//Modulo zwischen Länge Ergebnis & Anzahl Prozessoren
+																		//Aussage: wieviele Elemente +1 übenehmen müssen(so ungefähr xD)
+																		//(wenn Kernanzahl 2er Potenz..)
 		final Semaphore indebtedSemaphore = new Semaphore(1 - PROCESSOR_COUNT);
 
 		for (int threadIndex = 0; threadIndex < PROCESSOR_COUNT; ++threadIndex) {
+			//wichtig, dass das hier (im main()) passiert und nicht in den Schleifen rumrechnen wann abgebrochen werden muss (unten)
 			final int startIndex = threadIndex * sectorWidth + (threadIndex < sectorThreshold ? threadIndex : sectorThreshold);
-			final int stopIndex  = startIndex  + sectorWidth + (threadIndex < sectorThreshold ? 1 : 0);
+			final int stopIndex  = startIndex  + sectorWidth + (threadIndex < sectorThreshold ? 1 : 0);	//nicht mehr zu berechnen, exklusive
 			final Runnable runnable = new Runnable() {
 				public void run() {
-					try {
+
+					try {	//try/finally im release() rum, weil Errors immer passieren könnten (zB outOfMemmory)
 						for (int index = startIndex; index < stopIndex; ++index) {
-							result[index] = leftOperand[index] + rightOperand[index];
+							result[index] = leftOperand[index] + rightOperand[index];	//doing the task: adding up
 						}
-					} finally {
-						indebtedSemaphore.release();
+					} finally {//finally weil: sonst bleibt Thread hängen, falls ein Fehler auftritt
+						indebtedSemaphore.release();	
 					}
 				}
 			};
-			// EXECUTOR_SERVICE.execute(runnable);							// uncomment for managed thread alternative!
-			new Thread(runnable).start();									// comment for managed thread alternative!
+
+			//unten: ersteres wäre eine ThreadPool-Lösung
+			//EXECUTOR_SERVICE.execute(runnable);							// uncomment for managed thread alternative!
+			new Thread(runnable).start();
 		}
 
-		indebtedSemaphore.acquireUninterruptibly();
+		//würde nie hier ankommen ohne obigen try catch bei error -> deadlog
+		indebtedSemaphore.acquireUninterruptibly();	//lass dich nicht unterbrechen while acquire - warum soll das interruppted werden können? xD
+		//alternativ interrupt auffangen und acquire()
 		return result;
 	}
 
 
 	/**
+	 * vgl. http://de.wikipedia.org/wiki/Dyadisches_Produkt
+	 * 
 	 * Multiplexes two vectors, potentially distributing the work load into as many new child
 	 * threads as there are processor cores within a given system. In PERFECT mode, work
 	 * distribution is avoided whenever the result would be too small for distribution to be
@@ -161,6 +173,11 @@ public final class VectorMathDistributed {
 
 
 	/**
+
+	 * Threads bearbeiten reihum alle Operationen. (durchzählen)
+	 * Nachteil: nicht optimiert auf Prozessoren für very-long-instructions-works (oder so)
+	 * alles was auf einer superskalaren Pipeline basiert: klappt gut
+	 * 
 	 * Multiplexes two vectors, distributing the work load into as many new child threads as
 	 * there are processor cores within a given system. This algorithm uses one thread per
 	 * processor core, calculating stripes of rows (for example 0, 4, 8,...) within within
@@ -204,6 +221,15 @@ public final class VectorMathDistributed {
 
 
 	/**
+	 * Für jedes Ergebnis ein neues Runnable für jedes Element im Ergebnisvektor
+	 * runnable verwenden mit executor-service. der wird aber NICHT für jedes Runnable einen thread öffnen, sondern sie in eine queque hängen
+	 * Runnable=Arbeitspakete hier, mit Thread-Pool
+	 * Witz dabei: Lösung genau so schnell wie die anderen beidne auch->effizient & einfach
+	 * tödlicher Fehler dabei: für JEDES Element im Ergebnisvektor einen Thread erzeugen -> ev OutOfMemory Exception
+	 * weile für jeden thread Speicher reserviert werden muss!!
+	 * Obergrenze von gleichzeitig verfügbaren Threads im Betriebssystem dadurch vorgegeben!
+	 *
+	 * 
 	 * Multiplexes two vectors, distributing the work load into as many new child threads as
 	 * there are matrix rows to be processed. This algorithm uses one thread per result row.
 	 * Demonstrates the use of a normal semaphore to prevent more child threads to be started
@@ -221,6 +247,7 @@ public final class VectorMathDistributed {
 		final double[][] result = new double[leftOperand.length][rightOperand.length];
 
 		final Semaphore indebtedSemaphore = new Semaphore(1 - leftOperand.length);
+		//mit normaler Semaphore:
 		// final Semaphore gateSemaphore = new Semaphore(PROCESSOR_COUNT);		// uncomment for unmanaged thread alternative!
 
 		for (int threadIndex = 0; threadIndex < leftOperand.length; ++threadIndex) {
@@ -232,13 +259,18 @@ public final class VectorMathDistributed {
 							result[leftIndex][rightIndex] = leftOperand[leftIndex] * rightOperand[rightIndex];
 						}
 					} finally {
+						//mit normaler Semaphore:
 						// gateSemaphore.release();						// uncomment for unmanaged thread alternative!
 						indebtedSemaphore.release();
 					}
 				}
 			};
 
+			//ThreadPool, keinen neuen Thread starten (nicht .start())
 			EXECUTOR_SERVICE.execute(runnable);							// comment for managed thread alternative!
+			//mit normaler Semaphore:
+			//bleibt immer nach 4 stehen und wartet bis release() aufgerufen wird --> stotternder Vorgang
+			
 			// gateSemaphore.acquireUninterruptibly();					// uncomment for managed thread alternative!
 			// new Thread(runnable).start();							// uncomment for managed thread alternative!
 		}

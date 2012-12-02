@@ -13,6 +13,10 @@ import de.htw.ds.util.BinaryTransporter;
 
 
 /**
+ * Unterschied zu FileCopyDistributed1:
+ * Hier wird nur EINE innere Klasse definiert, von der zwei Instanzen erstellt werden
+ * in 1 werden 2 anonyme Klassen definiert, mit jeweils einer Instanz
+ * ----
  * <p>Demonstrates copying a file using two separate threads for file-read and file-write.
  * Note that this is only expected to be more efficient that a single-threaded implementation
  * when using multi-core systems with multiple hard drives!</p>
@@ -28,30 +32,36 @@ public final class FileCopyDistributed2 {
 	 * @throws IOException if there's an I/O related problem
 	 */
 	public static void main(final String[] args) throws IOException {
-		final Path sourcePath = Paths.get(args[0]);
+		
+		final Path sourcePath = Paths.get(args[0]);//quellpfad
 		if (!Files.isReadable(sourcePath)) throw new IllegalArgumentException(sourcePath.toString());
 
-		final Path sinkPath = Paths.get(args[1]);
+		final Path sinkPath = Paths.get(args[1]);//zielpfad
 		if (sinkPath.getParent() != null && !Files.isDirectory(sinkPath.getParent())) throw new IllegalArgumentException(sinkPath.toString());
 
 		InputStream fileSource = null;
 		OutputStream fileSink = null;
+		
 		try {
 			// open file streams
 			fileSource = Files.newInputStream(sourcePath);
 			fileSink = Files.newOutputStream(sinkPath);
 
 			// create inter-thread pipe
-			final PipedInputStream pipedSource = new PipedInputStream(BUFFER_LENGTH);
-			final PipedOutputStream pipedSink = new PipedOutputStream(pipedSource);
+			final PipedInputStream pipedSource = new PipedInputStream(BUFFER_LENGTH);//liest aus Pipe
+			final PipedOutputStream pipedSink = new PipedOutputStream(pipedSource);	//schreibt in Pipe, direkt connecten
 
+			//zwei Transporter erstellen (Hilfsklasse im Projekt); true = schließe hinterher
 			final Runnable fileSourceTransporter = new BinaryTransporter(true, BUFFER_LENGTH, fileSource, pipedSink);
 			final Runnable fileSinkTransporter = new BinaryTransporter(true, BUFFER_LENGTH, pipedSource, fileSink);
 
 			new Thread(fileSourceTransporter, "source-transporter").start();
 			new Thread(fileSinkTransporter, "sink-transporter").start();
 			System.out.println("two transporter threads started.");
+			
 		} catch (final Throwable exception) {
+
+			//abfangen falls threads starten nicht funktioniert: (FALLS thread starten funktioniert, sorgt true dafür)
 			try { fileSource.close(); } catch (final Throwable nestedException) {}
 			try { fileSink.close(); } catch (final Throwable nestedException) {}
 			throw exception;
