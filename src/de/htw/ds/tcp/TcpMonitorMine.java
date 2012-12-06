@@ -213,14 +213,23 @@ public final class TcpMonitorMine implements Runnable, Closeable {
 				MultiOutputStream requestStreams = new MultiOutputStream(requestStreamToServer, requestStreamToLog);
 				MultiOutputStream responseStreams = new MultiOutputStream(responseStreamToClient, responseStreamToLog);
 				
-				
-				new BinaryTransporter(true, 0xFF, requestStreamFromClient, requestStreams).call();
-				new BinaryTransporter(true, 0xFF, responseStreamFromServer, responseStreams).call();
+				//2 Futures mit BinaryTransporter zum Schreiben der LogFiles in den Threadpool submitten:
+				// einmal mit dem Response Outputstream vom Server, einmal mit dem request outpustream vom Client
+				final Future<Long> rf1 = TcpMonitorMine.this.executorService.submit((Callable<Long>)new BinaryTransporter(true, 0xFFFF, requestStreamFromClient, requestStreams));
+				final Future<Long> rf2 = TcpMonitorMine.this.executorService.submit((Callable<Long>)new BinaryTransporter(true, 0xFFFF, responseStreamFromServer, responseStreams));
 							
-				
-			}
-			catch (final Throwable exception) {
+				//...
+				try {
+					final long requestBytes = rf1.get();
+					final long responseBytes = rf2.get(); 
+					Logger.getGlobal().log(Level.INFO, "Connection {0} transported {1} request bytes and {2} response bytes.", new Object[] { connectionID, requestBytes, responseBytes });
+				} catch (final ExecutionException exception) {
+					throw exception.getCause();
+				}
+			} catch (final Throwable exception) {
 				Logger.getGlobal().log(Level.WARNING, exception.getMessage(), exception);
+			} finally {
+				try { this.clientConnection.close(); } catch (final Throwable exception) {}
 			}
 		}
 	}
