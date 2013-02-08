@@ -1,13 +1,13 @@
 package de.htw.ds.http;
 
 import java.io.IOException;
-import de.htw.ds.TypeMetadata;
+import de.sb.javase.TypeMetadata;
 
 
 /**
  * <p>HTTP request handler interface, the equivalent to a CGI or a Java EE Servlet.</p>
  */
-@TypeMetadata(copyright="2008-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
+@TypeMetadata(copyright="2008-2013 Sascha Baumeister, all rights reserved", version="0.3.0", authors="Sascha Baumeister")
 public interface HttpRequestHandler {
 
 	/**

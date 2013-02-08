@@ -1,7 +1,6 @@
 package de.htw.ds.http;
 
 import java.io.BufferedOutputStream;
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ProtocolException;
@@ -20,7 +19,7 @@ import java.util.logging.Logger;
  * HTTP 1.1 connection keep-alive feature, and request path mapping. Further
  * features depend on the given resource flavor.</p>
  */
-public final class HttpConnectionHandler implements Runnable, Closeable {
+public final class HttpConnectionHandler implements Runnable, AutoCloseable {
 	private static final int TCP_PACKET_SIZE = 0x500;
 	private static final long KEEP_ALIVE_MILLIES = 5000;
 	private static final AtomicLong LAST_HANDLER_ID = new AtomicLong();
@@ -72,9 +71,9 @@ public final class HttpConnectionHandler implements Runnable, Closeable {
 			for (boolean hasNextRequest = true; hasNextRequest; hasNextRequest = this.hasNextRequest(requestHeader, responseHeader)) {
 				try {
 					try {
-						final OutputStream outputStream = new BufferedOutputStream(this.connection.getOutputStream(), TCP_PACKET_SIZE);
+						final OutputStream byteSink = new BufferedOutputStream(this.connection.getOutputStream(), TCP_PACKET_SIZE);
 						requestHeader = new HttpRequestHeader(this.connection.getInputStream(), null);
-						responseHeader = new HttpResponseHeader(requestHeader.getVersion(), requestHeader.getRevision(), null, outputStream);
+						responseHeader = new HttpResponseHeader(requestHeader.getVersion(), requestHeader.getRevision(), null, byteSink);
 					} catch (final ProtocolException exception) {
 						responseHeader = new HttpResponseHeader((byte) 1, (byte) 0, null, this.connection.getOutputStream());
 						responseHeader.setType(HttpResponseHeader.Type.BAD_REQUEST);
@@ -91,18 +90,19 @@ public final class HttpConnectionHandler implements Runnable, Closeable {
 				} finally {
 					// strip any remaining request body content from the connection, if necessary
 					if (requestHeader.getProperties().containsKey("Content-Length")) {
-						try { requestHeader.getBodyInputStream().skip(Long.MAX_VALUE); } catch (final Exception exception) {}
+						try { requestHeader.getBodySource().skip(Long.MAX_VALUE); } catch (final Exception exception) {}
 					}
 					// flush response body stream to make sure it is written to the connection 
-					try { responseHeader.getBodyOutputStream().flush(); } catch (final Exception exception) {}
+					try { responseHeader.getBodySink().flush(); } catch (final Exception exception) {}
 				}
 			}
 		} catch (final SocketException exception) {
 			// connection has been reset by client, do nothing
 		} catch (final Throwable exception) {
-			Logger.getGlobal().log(Level.WARNING,  exception.getMessage(), exception);
+			Logger.getGlobal().log(Level.WARNING, exception.getMessage(), exception);
+			if (exception instanceof Error) throw (Error) exception;
 		} finally {
-			try { this.close(); } catch (final Throwable exception) {}
+			try { this.close(); } catch (final Exception exception) {}
 			Logger.getGlobal().log(Level.INFO, "Connection handler {0} closed.", this.identity);
 		}
 	}
@@ -149,7 +149,11 @@ public final class HttpConnectionHandler implements Runnable, Closeable {
 		if ("close".equalsIgnoreCase(requestHeader.getProperties().get("Connection"))) return false;
 
 		for (long keepAliveMillies = KEEP_ALIVE_MILLIES; keepAliveMillies >= 0 && this.connection.getInputStream().available() == 0; --keepAliveMillies) {
-			try { Thread.sleep(1); } catch (final InterruptedException exception) {}
+			try {
+				Thread.sleep(1);
+			} catch (final InterruptedException interrupt) {
+				throw new ThreadDeath();
+			}
 		}
 		return this.connection.getInputStream().available() > 0;
 	}

@@ -1,0 +1,31 @@
+<?xml version="1.0" ?>
+<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/">
+	<S:Body>
+		<ns2:addEntryResponse xmlns:ns2="http://chat.ds.htw.de/">
+			<return>1339166815971</return>
+		</ns2:addEntryResponse>
+	</S:Body>
+</S:Envelope>
+
+
+<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/">
+	<S:Body>
+		<ns2:getEntriesResponse xmlns:ns2="http://chat.ds.htw.de/">
+			<return>
+				<alias>2829@tabernakel</alias>
+				<content>TEST TEST</content>
+				<timestamp>1339166815971</timestamp>
+			</return>
+			<return>
+				<alias>2700@tabernakel</alias>
+				<content>dsdf</content>
+				<timestamp>1339166668555</timestamp>
+			</return>
+			<return>
+				<alias>2666@tabernakel</alias>
+				<content>Aloa!!</content>
+				<timestamp>1339166649028</timestamp>
+			</return>
+		</ns2:getEntriesResponse>
+	</S:Body>
+</S:Envelope>

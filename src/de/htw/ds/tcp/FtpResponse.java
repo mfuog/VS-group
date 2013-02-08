@@ -4,13 +4,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.ProtocolException;
-import de.htw.ds.TypeMetadata;
+import de.sb.javase.TypeMetadata;
 
 
 /**
  * <p>This class models FTP responses.</p>
  */
-@TypeMetadata(copyright="2011-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
+@TypeMetadata(copyright="2011-2013 Sascha Baumeister, all rights reserved", version="0.3.0", authors="Sascha Baumeister")
 public final class FtpResponse {
 
 	private final short code;
@@ -59,29 +59,30 @@ public final class FtpResponse {
 
 
 	/**
-	 * Parses an FTP response from the given reader, and returns an instance of FtpResponse.
-	 * @param reader the reader
+	 * Parses an FTP response from the given char source, and returns an
+	 * instance of FtpResponse.
+	 * @param charSource the source
 	 * @return an instance of FtpResponse
-	 * @throws NullPointerException if the given reader is null
+	 * @throws NullPointerException if the given source is <tt>null</tt>
 	 * @throws IOException if there is an I/O related problem
 	 */
-	public static final FtpResponse parse(final BufferedReader reader) throws IOException {
-		final StringWriter writer = new StringWriter();
+	public static final FtpResponse parse(final BufferedReader charSource) throws IOException {
+		final StringWriter charSink = new StringWriter();
 		short code = -1;
 
 		while (true) {
-			final String line = reader.readLine();
+			final String line = charSource.readLine();
 			if (line.length() < 4) throw new ProtocolException();
 
-			writer.write(line.substring(4));
+			charSink.write(line.substring(4));
 			if (line.charAt(3) == ' ') {
 				code = Short.parseShort(line.substring(0, 3));
 				break;
 			} else {
-				writer.write("\n");
+				charSink.write("\n");
 			}
 		}
 
-		return new FtpResponse(code, writer.toString());
+		return new FtpResponse(code, charSink.toString());
 	}
 }

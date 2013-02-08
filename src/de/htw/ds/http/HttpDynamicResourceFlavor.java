@@ -15,7 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
-import de.htw.ds.util.CallbackMap;
+import de.sb.javase.util.CallbackMap;
 
 
 /**
@@ -30,7 +30,7 @@ public final class HttpDynamicResourceFlavor implements HttpServer.ResourceFlavo
 	private static final String SOURCE_FILE_EXTENSION = ".java";
 	private static final String COMPILE_FILE_EXTENSION = ".class";
 	private static final Map<String,Map<String,Serializable>> SESSION_MAPS = Collections.synchronizedMap(new HashMap<String,Map<String,Serializable>>());
-	private static final CallbackMap<Serializable> GLOBAL_MAP = new CallbackMap<Serializable>(Collections.synchronizedMap(new HashMap<String,Serializable>()));
+	private static final CallbackMap<String,Serializable> GLOBAL_MAP = new CallbackMap<>(Collections.synchronizedMap(new HashMap<String,Serializable>()));
 
 
 	/**
@@ -68,7 +68,7 @@ public final class HttpDynamicResourceFlavor implements HttpServer.ResourceFlavo
 	 * Returns the global scope map.
 	 * @return the global map
 	 */
-	protected static CallbackMap<Serializable> globalMap() {
+	protected static CallbackMap<String,Serializable> globalMap() {
 		return GLOBAL_MAP;
 	}
 

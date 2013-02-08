@@ -1,274 +1,0 @@
-HTTP/1.1 200 OK
-Content-Length: 9826
-Content-Type: text/html
-
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
-<head>
-<title>SELFHTML 8.0 (HTML-Dateien selbst erstellen)</title>
-<link rel="stylesheet" type="text/css" href="src/selfhtml.css">
-<meta name="description"    content="SELFHTML 8.0 - Die bekannte Dokumentation zu HTML, JavaScript und CGI/Perl - Tutorial und Referenz, mit etlichen Zusatztips zu Design, Grafik, Projektverwaltung usw.">
-<meta name="keywords"       content="SELFHTML, HTML, Dynamic HTML, JavaScript, CGI, Perl, Grafik, WWW-Seiten, Web-Seiten, Hilfe, Dokumentation, Beschreibung">
-<meta name="author"         content="Stefan M&uuml;nz, selfhtml@teamone.de">
-<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
-<meta name="DC.Publisher"   content="selfhtml@teamone.de">
-<meta name="DC.Date"        content="2001-10-27T08:00+01:00">
-<meta name="DC.Identifier"  content="http://selfhtml.teamone.de/index.htm">
-<meta name="DC.Language"    content="de">
-<meta name="DC.Rights"      content="editorial/copyright.htm">
-<meta name="DC.Date.Create" content="2001-10-27T08:00+01:00">
-<meta name="SELF.Version"   content="1">
-<meta name="SELF.Pagetype"  content="Ordner">
-<meta name="SELF.Path"      content=".">
-<script type="text/javascript">
-<!--
-function News() { F = open("http://selfaktuell.teamone.de/news.htm","Fenster","width=520,height=400,scrollbars=yes,resizable=yes,status=yes"); }
-//-->
-</script>
-</head>
-<body bgcolor="#FFFFFF" text="#000000" link="#AA5522" vlink="#772200" alink="#000000">
-
-
-<table cellpadding="4" cellspacing="0" border="0" width="100%">
-<tr>
-<td bgcolor="#FFEEDD" colspan="2" class="nav"><a class="an" name="top"><b>SELFHTML: Version 8.0 vom 27.10.2001, Autor: Stefan M&uuml;nz</b></a></td>
-</tr>
-<tr>
-<td bgcolor="#EEEEEE" class="doc"><img src="src/logo.gif" width="106" height="109" border="0" alt="SELFHTML"></td>
-<td bgcolor="#EEEEEE" class="doc" valign="bottom" width="100%">
-<span class="blue">Die Energie des Verstehens</span><br>
-<b>HTML-Dateien selbst erstellen</b>
-<h1>SELFHTML</h1>
-</td>
-</tr>
-<tr>
-<td bgcolor="#EEEEEE" class="doc" valign="top" align="center">
-
-<table border="0" cellpadding="5" cellspacing="5" width="100%"><tr>
-<td bgcolor="#FFEEDD" align="center"><a href="#" OnClick="if (!window.News) return true; News(); return false;"><img src="src/auge.gif" width="24" height="16" border="0" alt="News"><br><b>News</b></a><br>
-Online-News<br>
-rund um<br>
-SELFHTML
-</td></tr></table>
-
-</td>
-<td bgcolor="#FFFFFF" valign="top" width="100%">
-<table cellpadding="5" cellspacing="5"><tr><td nowrap valign="top">
-
-
-<table border="0" cellpadding="5" cellspacing="0" width="250"><tr>
-<td bgcolor="#EEEEEE"><b>Inhalt: Allgemeines</b></td></tr></table>
-
-<p><img src="src/kap.gif" width="15" height="13" border="0" alt="Kapitel">&nbsp;<a href="editorial/index.htm"><b>Editorial</b></a><br>
-
-<img src="src/kap.gif" width="15" height="13" border="0" alt="Kapitel">&nbsp;<a href="intro/index.htm"><b>Einf&uuml;hrung</b></a></p>
-
-
-
-<table border="0" cellpadding="5" cellspacing="0" width="250"><tr>
-<td bgcolor="#EEEEEE"><b>Inhalt: Web-Technologien</b></td></tr></table>
-
-<p><img src="src/kap.gif" width="15" height="13" border="0" alt="Kapitel">&nbsp;<a href="html/index.htm"><b>HTML/XHTML</b></a>&#160;&#160;<br>
-
-<img src="src/kap.gif" width="15" height="13" border="0" alt="Kapitel">&nbsp;<a href="css/index.htm"><b>CSS Style-Sheets</b></a>&#160;&#160;<br>
-
-<img src="src/kap.gif" width="15" height="13" border="0" alt="Kapitel">&nbsp;<a href="xml/index.htm"><b>XML/DTDs</b></a><br>
-
-<img src="src/kap.gif" width="15" height="13" border="0" alt="Kapitel">&nbsp;<a href="javascript/index.htm"><b>JavaScript/DOM</b></a><br>
-
-<img src="src/kap.gif" width="15" height="13" border="0" alt="Kapitel">&nbsp;<a href="dhtml/index.htm"><b>Dynamisches HTML</b></a><br>
-
-<img src="src/kap.gif" width="15" height="13" border="0" alt="Kapitel">&nbsp;<a href="cgiperl/index.htm"><b>CGI/Perl</b></a><br>
-
-<img src="src/kap.gif" width="15" height="13" border="0" alt="Kapitel">&nbsp;<a href="php/index.htm"><b>PHP</b></a><br>
-
-</p>
-
-
-
-<table border="0" cellpadding="5" cellspacing="0" width="250"><tr>
-<td bgcolor="#EEEEEE"><b>Inhalt: Erg&auml;nzendes Wissen</b></td></tr></table>
-
-<p><img src="src/kap.gif" width="15" height="13" border="0" alt="Kapitel">&nbsp;<a href="inter/index.htm"><b>Internationalisierung</b></a>&#160;&#160;<br>
-
-<img src="src/kap.gif" width="15" height="13" border="0" alt="Kapitel">&nbsp;<a href="grafik/index.htm"><b>Grafik</b></a><br>
-
-<img src="src/kap.gif" width="15" height="13" border="0" alt="Kapitel">&nbsp;<A HREF="projekt/index.htm"><b>Web-Projektverwaltung</b></a><br>
-
-<img src="src/kap.gif" width="15" height="13" border="0" alt="Kapitel">&nbsp;<a href="diverses/index.htm"><b>Diverse technische Erg&auml;nzungen</b></a></p>
-
-
-
-
-<table border="0" cellpadding="5" cellspacing="0" width="250"><tr>
-<td bgcolor="#EEEEEE"><b>Inhalt: Extras</b></td></tr></table>
-
-<p><img src="src/kap.gif" width="15" height="13" border="0" alt="Kapitel">&nbsp;<a href="layouts/index.htm"><b>Fertige Layouts</b></a><br>
-
-<img src="src/kap.gif" width="15" height="13" border="0" alt="Kapitel">&nbsp;<a href="helferlein/index.htm"><b>Kleine Helferlein</b></a><br>&nbsp;</p>
-
-
-</td>
-<td nowrap valign="top">
-
-
-
-<table border="0" cellpadding="5" cellspacing="0" width="250"><tr>
-<td bgcolor="#EEEEEE"><b>Navigation: Kurzreferenzen</b></td></tr></table>
-
-<p><img src="src/dok.gif" width="15" height="10" border="0" alt="Seite">&nbsp;<a href="navigation/html.htm"><b>Kurzreferenz: HTML</b></a><br>
-
-<img src="src/dok.gif" width="15" height="10" border="0" alt="Seite">&nbsp;<a href="navigation/css.htm"><b>Kurzreferenz: CSS</b></a></p>
-
-
-
-<table border="0" cellpadding="5" cellspacing="0" width="250"><tr>
-<td bgcolor="#EEEEEE"><b>Navigation: Verzeichnisse</b></td></tr></table>
-
-<p><img src="src/dok.gif" width="15" height="10" border="0" alt="Seite">&nbsp;<a href="navigation/inhalt.htm"><b>Inhaltsverzeichnis</b></a><br>
-
-<img src="src/dok.gif" width="15" height="10" border="0" alt="Seite">&nbsp;<a href="navigation/syntax.htm"><b>Syntaxverzeichnis</b></a><br>
-
-<img src="src/dok.gif" width="15" height="10" border="0" alt="Seite">&nbsp;<a href="navigation/stichwort.htm"><b>Stichwortverzeichnis</b></a></p>
-
-
-
-<table border="0" cellpadding="5" cellspacing="0" width="250"><tr>
-<td bgcolor="#EEEEEE"><b>Navigation: Weitere Zug&auml;nge</b></td></tr></table>
-
-<p><img src="src/dok.gif" width="15" height="10" border="0" alt="Seite">&nbsp;<a href="navigation/faq.htm"><b>H&auml;ufig gestellte Fragen</b></a><br>
-
-<img src="src/dok.gif" width="15" height="10" border="0" alt="Seite">&nbsp;<a href="navigation/anfang/index.htm"><b>Wie fange ich an?</b></a></p>
-
-
-
-<table border="0" cellpadding="5" cellspacing="0" width="250"><tr>
-<td bgcolor="#EEEEEE"><b>Navigation: Extras</b></td></tr></table>
-
-<p><img src="src/dok.gif" width="15" height="10" border="0" alt="Seite">&nbsp;<a href="navigation/quickbar/index.htm" target="_parent"><b>SELFHTML Quickbar</b></a><br>
-
-<img src="src/dok.gif" width="15" height="10" border="0" alt="Seite">&nbsp;<a href="navigation/suche/index.htm" target="_parent"><b>SELFHTML Suche</b></a></p>
-
-</td></tr></table>
-</td></tr>
-
-<tr>
-<td bgcolor="#EEEEEE" class="doc" rowspan="2" width="110" align="center" valign="top">&nbsp;</td>
-<td bgcolor="#EEEEEE" class="doc" width="100%" valign="top">
-<p>&nbsp;</p><h2>SELFHTML aktuell</h2>
-</td></tr>
-<tr>
-<td bgcolor="#FFFFFF" width="100%" valign="top">
-
-<table cellpadding="5" cellspacing="5"><tr><td nowrap valign="top">
-
-
-<p>Das <b>Online-Angebot von SELFHTML</b>, das Sie ebenfalls kennen sollten!<br>Die Einstiegsseite erreichen Sie &uuml;ber den folgenden Link:</p>
-
-<p><img src="src/serverkap.gif" width="15" height="13" border="0" alt="Online-Kapitel">&nbsp;<a target="_top" href="http://selfaktuell.teamone.de/"><b>SELFHTML aktuell</b></a></p>
-
-<p>Dort finden Sie unter anderem:<br>
-<img src="src/serverdok.gif" width="15" height="10" border="0" alt="Online-Seite">&nbsp;<a target="_top" href="http://selfaktuell.teamone.de/extras/download.shtml"><b>SELFHTML Download</b></a> zum Offline-Lesen<br>
-<img src="src/serverdok.gif" width="15" height="10" border="0" alt="Online-Seite">&nbsp;<a target="_top" href="http://selfaktuell.teamone.de/extras/buch.htm"><b>SELFHTML als Buch</b></a> f&uuml;r Bildschirmmuffel<br>
-<img src="src/serverkap.gif" width="15" height="13" border="0" alt="Online-Kapitel">&nbsp;<a target="_top" href="http://selfaktuell.teamone.de/links/"><b>SELFHTML Linkverzeichnis</b></a> mit Links zu anderen Informationsquellen<br>
-<img src="src/serverkap.gif" width="15" height="13" border="0" alt="Online-Kapitel">&nbsp;<a target="_top" href="http://selfaktuell.teamone.de/artikel/"><b>Feature-Artikel</b></a> diverser Autoren zu einzelnen Fachthemen<br>
-<img src="src/serverdok.gif" width="15" height="10" border="0" alt="Online-Seite">&nbsp;<a target="_top" href="http://selfforum.teamone.de/"><b>SELFHTML Forum</b></a> zum Diskutieren von Fachthemen und Anderem
-</p>
-
-
-<p>&nbsp;</p></td></tr></table></td></tr>
-<tr><td colspan="2" bgcolor="#EEEEEE" class="doc">
-&#160;<a href="#top"><img src="src/up.gif" width="14" height="10" border="0" alt="nach oben"></a>&#160;
-</td></tr></table>
-
-<p>Die Originaladresse dieses Dokuments im Web lautet:<br>
-<img src="src/serverdok.gif" width="15" height="10" border="0" alt="Online-Seite">&nbsp;<a target="_top" href="http://selfhtml.teamone.de/"><b>http://selfhtml.teamone.de/</b></a></p>
-
-<p>&copy; 2001 <img src="src/mail.gif" width="15" height="10" border="0" alt="E-Mail">&nbsp;<a href="mailto:selfhtml@teamone.de">selfhtml@teamone.de</a></p>
-
-
-</body>
-</html>
-HTTP/1.1 200 OK
-Content-Length: 1736
-Content-Type: text/css
-
-/* DATEI: selfhtml.css */
-
-/* Wenn die Schriftgroessen von SELFHTML fuer Sie schwer lesbar sind */
-/* und Sie SELFHTML lokal lesen, benennen Sie diese Datei */
-/* um in selfnormal.css */
-/* und benennen Sie die Datei selfnosize.css im src-Verzeichnis */
-/* um in selfhtml.css */
-
-h1,h2,h3,h4,p,ul,ol,li,div,td,th,address,blockquote,nobr,b,i {
- font-family:Arial,sans-serif; }
-
-h1 { font-size:26px; margin-bottom:18px; }
-
-h2 { font-size:21px; margin-bottom:18px; }
-
-h2.sh2 { font-size:21px; }
-
-h3,h3.xmp,h3.xpl,h3.inf,h3.tip,h3.akt { font-size:16px; }
-
-h4 { font-size:13px; }
-
-p,ul,ol,li,div,td,th,address,blockquote { font-size:13px; }
-
-li { margin-top:3px; }
-
-pre { font-family:Courier New,Courier; font-size:13px; color:#0000C0; }
-
-code,kbd,tt { font-family:Courier New,Courier; color:#0000C0; }
-
-var { font-style:normal; color:#0000C0; }
-
-blockquote,cite { font-style:italic; }
-
-.xmpcode { border-width:10px; border-style:solid; border-color:#EEEEEE; background-color:#FFFFE0; }
-
-.code { background-color:#FFFFE0; }
-
-.tabxpl { background-color:#E4EEFF; }
-
-.doc { background-color:#EEEEEE; }
-
-.nav { background-color:#FFEEDD; }
-
-.qbar { background-color:#FFFFE0; font-size:13px; font-family:Arial,sans-serif; }
-
-.blue { color:#0000C0; }
-
-pre.normal { color:#000000; }
-
-a:link { color:#AA5522; text-decoration:underline; }
-
-a:visited { color:#772200; text-decoration:underline; }
-
-a:active { color:#000000; text-decoration:none; }
-
-a.an { text-decoration:none; }
-
-.unicode { font-size:15px; font-family:Arial Unicode MS,Arial,sans-serif }
-
-ins { color:#009900; font-weight:bold; text-decoration:none; }
-
-del { color:#990000; font-weight:bold; text-decoration:line-through; }HTTP/1.1 200 OK
-Content-Length: 2189
-Content-Type: image/gif
-
-GIF89aj m ³     fD3™U"DDD»fD»ˆfªˆˆÌ»ˆ»ÌÝÝÝÝÝ»™ÿÝ»ÿÿÝÝîÿ™™™ÿÿÿ!ù   ,    j m @þðÉI«½8g¥»ÿ`8)œ¸™¥©®²,ÇAÎäQÐ3Ï±½¬ P’ÂÄB@ \˜Kó)8w»c¸Qƒ¡ä3…´z]°>•PB:0/À£R‚RU ¹`ceE7XrlvvViz  ””VtmpO}:;€aD…`)…}
-‹knj•±² iU“KVŠX¢‡^3©25r|
-QTRy œr˜i–{LXÑzš½£‡
-eÞ“TŸª$mS¹è’3m´jšÞ g¾_ú¿
-øÞPI’ fD™Úš°Q	Ö¥G6ì4µhž; ¼#LRþý¸Q ApD>Ap ‡€IÎ* . p¦ 0îN‘@‰˜9ôñÏbý¢$,dÐ§ÿœ
-!ù´ê«Ý°jýµµ+×Às/åª^¡…QT[ç<%ªq#-7—IÁãÄ§*o˜©"ö`P`^p€¶˜Œl<dÕˆÕ%g1çÐÑóª(E"IÉ7‚˜"FmZNž5K“3&{uâVÂ¸’„›>ýÊIšÒ¢£X’­MŽqŽ›è8Bó¥¸1Éñ`\ äaˆÆ>mØXº}¨S¯€4Ž{©LŠ3‰Y4å±òÖšO×‚?<`ôjúþ±BQ€ÁÀQ&ÍpdçÚ+¬ÌM_àÃØGè=g€#•BZ†‡ÄÁ ŒÙDÚHýmX•T
-£b/>ã‹*hHãAØˆ£Z´íZA°X>zÎ/s9ÔÐ_‰Â*õÑ GM¢C¥˜%å	¿ƒ9’xsy€—_
-™„ÁUÁLƒsr¢MªØÀ	_\èEBž…Zj{Y±×"ªñÅÌ^ô¡§sGa0CdKŽ%Á ÑÃLÐÔQÇ¢Sd©æa’z±XšVövK4Žd3	Láe‰6hf¡ã·æ†r1¢ 6¬UÒŠ’ì&ª•ÜäúOQfþì€i+«kÀÔRÑÉgÎ&›>T$ÁùP%Ur%-Ms%¨Ö@[mDT¥8\äªµQ\¦=•d£,YLTÌPjk¶M°€$a‡·Ë4È×1âQR…*VH²HbÌ8‘|òƒ §%¹2«QRåï¥±8xJÈ†*iO…eÛ-Ë°€yËÃ-Éhç+%þÄaˆ9 QŒðqÔDòÅ¬™×ÈyhžÞI3Ï¸¤ý¤aÂœQPNû‡D~Z«aQ&øÖc¦¬²®ä28bôÚ])…Êˆ\cƒ¸8awîÐ±f8eP²G¹ªøœÚþÞ0–ÔáÔ·Ÿ`èä‘/FÝäñ—k·2tÐùMÞ}‡Ñq¤_š Ž•0ÖAŸÏ•Ûví"„£sáp<ñÃ« òñ’nõ;óCB/ýêÓÓ˜|õ@]?ýò,h_=÷(„=øvÂæ{P9óR1P&1GØÀég…}”…ÅoŒ'48¦ÂÞ“’Œ¶
-Ù´?a©ß÷8à>¶‹IØŠˆ<"5põ •¬¡é¡(bŠ‡CàCqF¤û:ðƒM0C>Œl€“Â·QÐz»[„^È¢ÉÉ7rJa¦@¼ Î%l¡CÁæ…ÊÂ*Â²'Žô©ˆ¥ÁÔþ$æ“DÍ*_‹ê¢'~„`˜¡c
-8ØôLÉ0X£X¦ä 'ª¬]H¸a¸U‚/4`H6ˆÌš¦uAÙ­U«J™í0§4)["i›OL€¨	8hI$|ƒ¨c”3©ÁÛ¢ˆ­zañÏÃ
-_=¢b«Ä$îv‰=\«”Èâ
-1ÚáqÝA4‚¥lLA ÄX\@ÓÀýçnèÕBØp™`AÈN ågÓLÂM²)ø'4INj¾*X›QÇœv•É]ÌHÅ/Ý8‘L‹1Î|H^ ÂFT™—*(SÎd"c±(ÃhQÂ‡ðÓI=¢ÀKþÓ³Cü˜áÒX-9E‡Ü5n†@ãL:ÚU 6UqtÏ,;Qf72q>‹U,§DÈ aô©?y„›ÂEw…aÎº	}ZË0!¡qþ‚GÎ\…AéI)t‡
-Ç¥ãmad_øŒFð«ŽOèÃ- å þœÒ~é)ÑB‰ŽÙé…†´Ä@uX,ô$u'åÊz
-Q¬“Áe	1ÉFw~C€± ,nî0k¤ wÖo1”_IÐÄ®Kø|‹AÝÁ2˜¥¢6ILŽ.×±èté5_ëßˆ&4Gá³wZÃbòñ´ñÃBE$P'I-Ê—mK‚`zÑxLC£³¼FT*þz¶³ÉH§Ð‡Úþ±‰'ÐÂ‹˜L›p²&¸Œ³—áZI÷(Å‘ÛÉó¨² ÎqvÐXÐ ˆ·±I"	&Û‚$%J<‰>÷/‘Î"•ŸK„Z—©¥`'Š\× )é þØ ®oH?jÈ °…s)Èˆ«pbÆ	É##ì	Ù?|NÓ¦emÝ°Z.¿¢Ž[\4h‘ŸfíJ@D8]àl2‚? À¬Noœ5"$j½e]N„l íä&P›/l¯EMt|ÓˆQŒ‡º!I—zàˆ²8ƒ0{Ù#T.’3Ì'_h¸y YÔü½9wã¼FŠÝHsBVýÉjkãS…RáØ‰’a¶÷í4 hP¢Ð8â¥.'i3‡¦Ò†TRi@%ÎÔÊ…Ù‡i#…:-­~5V"  ;

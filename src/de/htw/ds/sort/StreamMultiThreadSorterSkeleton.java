@@ -1,6 +1,6 @@
 package de.htw.ds.sort;
 
-import de.htw.ds.TypeMetadata;
+import de.sb.javase.TypeMetadata;
 
 
 /**
@@ -11,7 +11,7 @@ import de.htw.ds.TypeMetadata;
  * cores, and even more if such sorters are stacked!</p>
  * @param E the element type to be sorted in naturally ascending order
  */
-@TypeMetadata(copyright="2010-2012 Sascha Baumeister, all rights reserved", version="0.2.1", authors="Sascha Baumeister")
+@TypeMetadata(copyright="2010-2013 Sascha Baumeister, all rights reserved", version="0.2.1", authors="Sascha Baumeister")
 public final class StreamMultiThreadSorterSkeleton<E extends Comparable<E>> implements StreamSorter<E> {
 	private static enum InternalState { WRITE_LEFT, WRITE_RIGHT, READ }
 

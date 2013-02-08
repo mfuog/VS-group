@@ -1,19 +1,17 @@
 package de.htw.ds.tcp;
 
 import java.io.BufferedReader;
-import java.io.Closeable;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.file.Files;
-import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -22,52 +20,71 @@ import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import de.htw.ds.TypeMetadata;
-import de.htw.ds.util.BinaryTransporter;
-import de.htw.ds.util.MultiOutputStream;
-import de.htw.ds.util.SocketAddress;
+import de.sb.javase.TypeMetadata;
+import de.sb.javase.io.BinaryTransporter;
+import de.sb.javase.io.MultiOutputStream;
+import de.sb.javase.io.SocketAddress;
 
 
 /**
  * <p>This class models a TCP monitor, i.e. a TCP router that mirrors all
  * information between two ports, while logging it at the same time.</p>
  */
-@TypeMetadata(copyright="2008-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
-public final class TcpMonitor implements Runnable, Closeable {
+@TypeMetadata(copyright="2008-2013 Sascha Baumeister, all rights reserved", version="0.3.0", authors="Sascha Baumeister")
+public final class TcpMonitor implements Runnable, AutoCloseable {
 	// workaround for Java7 bug initializing global logger without parent!
-	static { LogManager.getLogManager(); } // = Klassenkonstruktor (ist ohne Name und keine parameter, deswegen static) 
-	// könnte man auch in main packen wird dann aber nicht ausgeführt wenn dieses klasse in der main einer anderen Klasse initialisiert wird
-
-	private static final Random RANDOMIZER = new Random();
-	private static final String CONNECTION_ID_PATTERN = "%1$tF-%1$tH.%1$tM.%1$tS.%tL-%06d";
-	private static final String LOG_FILE_PATTERN = "%s-%s.log";
+	static { LogManager.getLogManager(); }
 	private static final int MAX_PACKET_SIZE = 0xFFFF;
+
+	/**
+	 * <p>TCP monitor watchers are registered with a TCP monitor to act
+	 * whenever communication data becomes available, or a communication
+	 * transmission causes exceptions. This callback design allows
+	 * different kinds of applications to profit from a single monitor
+	 * implementation.
+	 */
+	public static interface Watcher {
+		/**
+		 * Called whenever a TCP monitor notices that two corresponding
+		 * connections have finished exchanging data. The given record
+		 * contains all the data exchanged, plus the open and close
+		 * timestamps of the data exchange.
+		 * @param record the monitor record
+		 */
+		void recordCreated(final TcpMonitorRecord record);
+
+		/**
+		 * Called whenever a TCP monitor catches an exception while
+		 * communication transmissions take place.
+		 * @param exception the exception
+		 */
+		void exceptionCatched(final Exception exception);
+	}
+
 
 	private final ServerSocket serviceSocket;
 	private final ExecutorService executorService;
 	private final InetSocketAddress forwardAddress;
-	private final Path contextPath;
+	private final TcpMonitor.Watcher watcher;
 
 
 	/**
 	 * Public constructor.
 	 * @param servicePort the service port
 	 * @param forwardAddress the forward address
-	 * @param contextPath the context directory path
-	 * @throws NullPointerException if the given socket-address of context directory is null
+	 * @param watcher the monitor watcher that is notified of connection activity
+	 * @throws NullPointerException if the given address or watcher is <tt>null</tt>
 	 * @throws IllegalArgumentException if the given service port is outside range [0, 0xFFFF]
-	 * @throws IOException if the given port is already in use, or cannot be bound,
-	 *    or the given context path is not a directory
+	 * @throws IOException if the given port is already in use, or cannot be bound
 	 */
-	public TcpMonitor(final int servicePort, final InetSocketAddress forwardAddress, final Path contextPath) throws IOException {
+	public TcpMonitor(final int servicePort, final InetSocketAddress forwardAddress, final TcpMonitor.Watcher watcher) throws IOException {
 		super();
-		if (forwardAddress == null) throw new NullPointerException();
-		if (!Files.isDirectory(contextPath)) throw new NotDirectoryException(contextPath.toString());
+		if (forwardAddress == null | watcher == null) throw new NullPointerException();
 
-		this.contextPath = contextPath;
 		this.executorService = Executors.newCachedThreadPool();
 		this.serviceSocket = new ServerSocket(servicePort);
 		this.forwardAddress = forwardAddress;
+		this.watcher = watcher;
 
 		final Thread thread = new Thread(this, "tcp-acceptor");
 		thread.setDaemon(true);
@@ -77,10 +94,19 @@ public final class TcpMonitor implements Runnable, Closeable {
 
 	/**
 	 * Closes this server.
-	 * @throws IOException if there is an I/O related problem
 	 */
-	public void close() throws IOException {
-		this.serviceSocket.close();
+	public void close() {
+		try { this.serviceSocket.close(); } catch (final Exception exception) {}
+		this.executorService.shutdown();
+	}
+
+
+	/**
+	 * Returns the service port.
+	 * @return the service port
+	 */
+	public int getServicePort() {
+		return this.serviceSocket.getLocalPort();
 	}
 
 
@@ -91,59 +117,27 @@ public final class TcpMonitor implements Runnable, Closeable {
 		while (true) {
 			Socket clientConnection = null;
 			try {
-				// serviceThreads sollten immer als beamon threads deklariert werden
 				clientConnection = this.serviceSocket.accept();
 
 				final ConnectionHandler connectionHandler = new ConnectionHandler(clientConnection);
 				this.executorService.execute(connectionHandler);
 			} catch (final SocketException exception) {
 				break;
-			} catch (final Throwable exception) {
-				try { clientConnection.close(); } catch (final Throwable nestedException) {}
-				try { Logger.getGlobal().log(Level.WARNING, exception.getMessage(), exception); } catch (final Throwable nestedException) {}
-				// --> acceptor thread muss try haben falls error kommt --> damit die while schleife verlassen wird und der server wieder freigegeben wird
-				// sonst wird der request nie beantwortet auch wenn eine exception kam
+			} catch (final Exception exception) {
+				try { clientConnection.close(); } catch (final Exception nestedException) {}
+				Logger.getGlobal().log(Level.WARNING, exception.getMessage(), exception);
 			}
 		}
 	}
 
 
-	/**
-	 * Application entry point. The given runtime parameters must be a service port,
-	 * a server context directory, and the forward socket-address as address:port combination.
-	 * @param args the given runtime arguments
-	 * @throws IllegalArgumentException if the given service port is outside range [0, 0xFFFF]
-	 * @throws IOException if the given port is already in use, or cannot be bound,
-	 *    or the given context path is not a directory
-	 */
-	public static void main(final String[] args) throws IOException {
-		final long timestamp = System.currentTimeMillis();
-		final int servicePort = Integer.parseInt(args[0]);
-		final Path contextPath = Paths.get(args[1]).normalize();
-		final InetSocketAddress forwardAddress = new SocketAddress(args[2]).toInetSocketAddress();
-
-		try (TcpMonitor server = new TcpMonitor(servicePort, forwardAddress, contextPath)) {
-			// print welcome message
-			System.out.println("TCP monitor running on one acceptor thread, type \"quit\" to stop.");
-			System.out.format("Service port is %s.\n", server.serviceSocket.getLocalPort());
-			System.out.format("Context directory is %s.\n", contextPath);
-			System.out.format("Forward address is %s.\n", forwardAddress.toString());
-			System.out.format("Startup time is %sms.\n", System.currentTimeMillis() - timestamp);
-
-			// wait for stop signal on System.in
-			final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-			try { while (!"quit".equals(reader.readLine())); } catch (final IOException exception) {}
-		}
-	}
-
 
 	/**
-	 * <p>Instances of this inner class handle TCP client connections
-	 * accepted by a TCP monitor.</p> 
+	 * <p>Instances of this inner class handle TCP client
+	 * connections accepted by a TCP monitor.</p> 
 	 */
 	private class ConnectionHandler implements Runnable {
 		final Socket clientConnection;
-
 
 		/**
 		 * Creates a new instance from a given client connection.
@@ -164,46 +158,87 @@ public final class TcpMonitor implements Runnable, Closeable {
 		 * completion.
 		 */
 		public void run() {
-			final String connectionID = String.format(CONNECTION_ID_PATTERN, System.currentTimeMillis(), RANDOMIZER.nextInt(1000000));
-			final Path requestLogPath = TcpMonitor.this.contextPath.resolve(String.format(LOG_FILE_PATTERN, connectionID, "request"));
-			final Path responseLogPath = TcpMonitor.this.contextPath.resolve(String.format(LOG_FILE_PATTERN, connectionID, "response"));
+			try (Socket serverConnection = new Socket(TcpMonitor.this.forwardAddress.getHostName(), TcpMonitor.this.forwardAddress.getPort())) {
+				final long openTimestamp = System.currentTimeMillis();
+				try (
+					ByteArrayOutputStream requestDataSink = new ByteArrayOutputStream();
+					ByteArrayOutputStream responseDataSink = new ByteArrayOutputStream();
+					OutputStream requestSink = new MultiOutputStream(serverConnection.getOutputStream(), requestDataSink);
+					OutputStream responseSink = new MultiOutputStream(this.clientConnection.getOutputStream(), responseDataSink)
+				) {
+					final Callable<?> requestTransporter = new BinaryTransporter(true, MAX_PACKET_SIZE, this.clientConnection.getInputStream(), requestSink);
+					final Callable<?> responseTransporter = new BinaryTransporter(true, MAX_PACKET_SIZE, serverConnection.getInputStream(), responseSink);
+					final Future<?> requestFuture = TcpMonitor.this.executorService.submit(requestTransporter);
+					final Future<?> responseFuture = TcpMonitor.this.executorService.submit(responseTransporter);
+					requestFuture.get();
+					responseFuture.get();
 
-			try (
-				/*
-				 * 3 ressourcen benötigen wir:
-				 * 		Socket (verbindung)
-				 * 		Datenausgabe-Strom
-				 * 		Dateneingabe-Strom
-				 * 
-				 * TcpMonitor.this --> instance der inneren Klasse
-				 */
-				
-				Socket serverConnection = new Socket(TcpMonitor.this.forwardAddress.getAddress(), TcpMonitor.this.forwardAddress.getPort());
-				OutputStream requestSink = new MultiOutputStream(serverConnection.getOutputStream(), Files.newOutputStream(requestLogPath));
-				OutputStream responseSink = new MultiOutputStream(this.clientConnection.getOutputStream(), Files.newOutputStream(responseLogPath));
-					// Multi.. schreibt auf 2 instancen (server und client) gleichzeitig --> transport wird dadurch viel einfacher
-			) {
-				// immer das SCHLIEßEN der Rexxourcen beachten -- übernimmt BinaryTransporter schon!
-				final Callable<Long> requestTransporter = new BinaryTransporter(true, MAX_PACKET_SIZE, this.clientConnection.getInputStream(), requestSink);
-				final Callable<Long> responseTransporter = new BinaryTransporter(true, MAX_PACKET_SIZE, serverConnection.getInputStream(), responseSink);
-
-				final Future<Long> requestFuture = TcpMonitor.this.executorService.submit(requestTransporter);
-				final Future<Long> responseFuture = TcpMonitor.this.executorService.submit(responseTransporter);
-
-				try {
-					// wenn ergebnisse (futures) falsch waren versucht er es erneut!
-					final long requestBytes = requestFuture.get();
-					final long responseBytes = responseFuture.get(); 
-					Logger.getGlobal().log(Level.INFO, "Connection {0} transported {1} request bytes and {2} response bytes.", new Object[] { connectionID, requestBytes, responseBytes });
+					final long closeTimestamp = System.currentTimeMillis();
+					final byte[] requestData = requestDataSink.toByteArray();
+					final byte[] responseData = responseDataSink.toByteArray();
+					final TcpMonitorRecord record = new TcpMonitorRecord(openTimestamp, closeTimestamp, requestData, responseData);
+					TcpMonitor.this.watcher.recordCreated(record);
+				} catch (final InterruptedException interrupt) {
+					throw new ThreadDeath();
 				} catch (final ExecutionException exception) {
-					throw exception.getCause();
+					final Throwable cause = exception.getCause();
+					if (cause instanceof Error) throw (Error) cause;
+					if (cause instanceof RuntimeException) throw (RuntimeException) cause;
+					if (cause instanceof IOException) throw (IOException) cause;
+					throw new AssertionError();
 				}
-			} catch (final Throwable exception) {
-				Logger.getGlobal().log(Level.WARNING, exception.getMessage(), exception);
+			} catch (final Exception exception) {
+				TcpMonitor.this.watcher.exceptionCatched(exception);
 			} finally {
-				try { this.clientConnection.close(); } catch (final Throwable exception) {}
-				// bufferstream, ,.. sachen die um dinge drum herum liegen müssen nicht geschlossen werden , wenn der innere Stream geschlossen wurde
+				try { this.clientConnection.close(); } catch (final Exception exception) {}
 			}
+		}
+	}
+
+
+	/**
+	 * Application entry point. The given runtime parameters must be a service port,
+	 * a server context directory, and the forward socket-address as address:port combination.
+	 * @param args the given runtime arguments
+	 * @throws IllegalArgumentException if the given service port is outside range [0, 0xFFFF]
+	 * @throws IOException if the given port is already in use, or cannot be bound,
+	 *    or the given context path is not a directory
+	 */
+	public static void main(final String[] args) throws IOException {
+		final long timestamp = System.currentTimeMillis();
+		final int servicePort = Integer.parseInt(args[0]);
+		final Path contextPath = Paths.get(args[1]).normalize();
+		final InetSocketAddress forwardAddress = new SocketAddress(args[2]).toInetSocketAddress();
+
+		final TcpMonitor.Watcher watcher = new TcpMonitor.Watcher() {
+			public void recordCreated(final TcpMonitorRecord record) {
+				final String fileName = String.format("%1$tF-%1$tH.%1$tM.%1$tS.%tL-%d.log", record.getOpenTimestamp(), record.getIdentity());
+				final Path filePath = contextPath.resolve(fileName);
+				try (OutputStream fileSink = Files.newOutputStream(filePath)) {
+					fileSink.write(record.getRequestData());
+					fileSink.write("\n\n*** RESPONSE DATA ***\n\n".getBytes("ASCII"));
+					fileSink.write(record.getResponseData());
+				} catch (final Exception exception) {
+					this.exceptionCatched(exception);
+				}
+			}
+
+			public void exceptionCatched(final Exception exception) {
+				Logger.getGlobal().log(Level.WARNING, exception.getMessage(), exception);
+			}
+		};
+
+		try (TcpMonitor server = new TcpMonitor(servicePort, forwardAddress, watcher)) {
+			// print welcome message
+			System.out.println("TCP monitor running on one acceptor thread, enter \"quit\" to stop.");
+			System.out.format("Service port is %s.\n", server.getServicePort());
+			System.out.format("Forward socket address is %s:%s.\n", forwardAddress.getHostName(), forwardAddress.getPort());
+			System.out.format("Context directory is %s.\n", contextPath);
+			System.out.format("Startup time is %sms.\n", System.currentTimeMillis() - timestamp);
+
+			// wait for stop signal on System.in
+			final BufferedReader charSource = new BufferedReader(new InputStreamReader(System.in));
+			try { while (!"quit".equals(charSource.readLine())); } catch (final IOException exception) {}
 		}
 	}
 }

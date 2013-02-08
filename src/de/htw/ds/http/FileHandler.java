@@ -6,13 +6,13 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import de.htw.ds.TypeMetadata;
+import de.sb.javase.TypeMetadata;
 
 
 /**
  * <p>HTTP request handler generating a response from a file resource.</p>
  */
-@TypeMetadata(copyright="2008-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
+@TypeMetadata(copyright="2008-2013 Sascha Baumeister, all rights reserved", version="0.3.0", authors="Sascha Baumeister")
 public final class FileHandler implements HttpRequestHandler {
 
 	private final Path resourcePath;
@@ -51,13 +51,13 @@ public final class FileHandler implements HttpRequestHandler {
 					responseHeader.getProperties().put("Content-Length", Long.toString(contentSize));
 
 					if (requestHeader.getType() != HttpRequestHeader.Type.HEAD) {
-						Files.copy(this.resourcePath, responseHeader.getBodyOutputStream());
+						Files.copy(this.resourcePath, responseHeader.getBodySink());
 					}
 					break;
 				}
 				case PUT: {
 					if (requestHeader.getProperties().containsKey("Content-Length")) {
-						Files.copy(requestHeader.getBodyInputStream(), this.resourcePath, StandardCopyOption.REPLACE_EXISTING);
+						Files.copy(requestHeader.getBodySource(), this.resourcePath, StandardCopyOption.REPLACE_EXISTING);
 						responseHeader.setType(HttpResponseHeader.Type.OK);
 					} else {
 						responseHeader.setType(HttpResponseHeader.Type.NO_LENGTH);
@@ -72,9 +72,9 @@ public final class FileHandler implements HttpRequestHandler {
 				case OPTIONS: {
 					responseHeader.setType(HttpResponseHeader.Type.OK);
 					responseHeader.getProperties().put("Content-Type", "text/text");
-					final OutputStreamWriter writer = new OutputStreamWriter(responseHeader.getBodyOutputStream());
-					writer.write("GET\nPOST\nHEAD\nPUT\nDELETE\nOPTIONS\n");
-					writer.flush();
+					final OutputStreamWriter charSink = new OutputStreamWriter(responseHeader.getBodySink());
+					charSink.write("GET\nPOST\nHEAD\nPUT\nDELETE\nOPTIONS\n");
+					charSink.flush();
 					break;
 				}
 				default: {

@@ -1,7 +1,6 @@
 package de.htw.ds.http;
 
 import java.io.BufferedReader;
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
@@ -13,14 +12,14 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.LogManager;
-import de.htw.ds.TypeMetadata;
+import de.sb.javase.TypeMetadata;
 
 
 /**
  * <p>This class models an abstract HTTP server.</p>
  */
-@TypeMetadata(copyright="2010-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
-public abstract class HttpServer implements Runnable, Closeable {
+@TypeMetadata(copyright="2010-2013 Sascha Baumeister, all rights reserved", version="0.3.0", authors="Sascha Baumeister")
+public abstract class HttpServer implements Runnable, AutoCloseable {
 	// workaround for Java7 bug initializing global logger without parent!
 	static { LogManager.getLogManager(); }
 
@@ -86,9 +85,18 @@ public abstract class HttpServer implements Runnable, Closeable {
 	 * Closes this server.
 	 * @throws IOException if there is an I/O related problem
 	 */
-	public final void close() throws IOException {
+	public final void close() {
+		try { this.serviceSocket.close(); } catch (final Exception exception) {}
 		this.executorService.shutdown();
-		this.serviceSocket.close();
+	}
+
+
+	/**
+	 * Returns the service port.
+	 * @return the service port
+	 */
+	public int getServicePort() {
+		return this.serviceSocket.getLocalPort();
 	}
 
 
@@ -142,7 +150,7 @@ public abstract class HttpServer implements Runnable, Closeable {
 	 * @param startupTimestamp the startup timestamp
 	 */
 	protected void printCommonWelcomeMessage(final long startupTimestamp) {
-		System.out.format("Service port is %s.\n", this.serviceSocket.getLocalPort());
+		System.out.format("Service port is %s.\n", this.getServicePort());
 		System.out.format("Context path is %s.\n", this.contextPath);
 		System.out.format("Registered request path mappings: %s\n", this.requestPathMappings);
 		System.out.format("Startup time is %sms.\n", System.currentTimeMillis() - startupTimestamp);
@@ -153,8 +161,8 @@ public abstract class HttpServer implements Runnable, Closeable {
 	 * Blocks until the line "quit" is typed into the process console.
 	 */
 	protected final void waitForShutdownSignal() {
-		final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-		try { while (!"quit".equals(reader.readLine())); } catch (final IOException exception) {}
+		final BufferedReader charSource = new BufferedReader(new InputStreamReader(System.in));
+		try { while (!"quit".equals(charSource.readLine())); } catch (final IOException exception) {}
 	}
 
 

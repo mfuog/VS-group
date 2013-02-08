@@ -1,0 +1,18 @@
+<!DOCTYPE html PUBLIC -//W3C//DTD XHTML 1.1//EN" "http://www.w3c.org/TR/xhtml11/DTD/xhtml11.dtd">
+<!-- author Sascha Baumeister (C) Sascha Baumeister 2008-2012 -->
+
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+		<title>Edge Server Demo</title>
+		<script type="text/javascript">
+			function init() {
+				var timezoneOffset = new Date().getTimezoneOffset() / -60.0;
+				document.embeds[0].src = "/de.htw.ds.edge.EdgeHandler.class?resourcePath=/de/htw/ds/edge/video/cornholio.mpg&timezoneOffset=" + timezoneOffset;
+			}
+		</script>
+	</head>
+	<body onload="init()">
+		<embed autostart="true" />
+	</body>
+</html>

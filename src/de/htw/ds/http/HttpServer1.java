@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import de.htw.ds.TypeMetadata;
+import de.sb.javase.TypeMetadata;
 
 
 /**
@@ -17,7 +17,7 @@ import de.htw.ds.TypeMetadata;
  * feature, and request path mapping. Note that by default the resource "/default.html" is used
  * instead of "/", but can be re-mapped as well.</p>
  */
-@TypeMetadata(copyright="2010-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
+@TypeMetadata(copyright="2010-2013 Sascha Baumeister, all rights reserved", version="0.3.0", authors="Sascha Baumeister")
 public final class HttpServer1 extends HttpServer {
 
 	/**
@@ -41,13 +41,12 @@ public final class HttpServer1 extends HttpServer {
 	public void run() {
 		while (true) {
 			try (Socket connection = this.getServiceSocket().accept()) {
-				@SuppressWarnings("resource")
 				final HttpConnectionHandler connectionHandler = new HttpConnectionHandler(connection, this.getResourceFlavor(), this.getContextPath(), this.getRequestPathMappings());
 				connectionHandler.run();
 			} catch (final SocketException exception) {
 				break;
-			} catch (final Throwable exception) {
-				try { Logger.getGlobal().log(Level.WARNING, exception.getMessage(), exception); } catch (final Throwable nestedException) {}
+			} catch (final Exception exception) {
+				try { Logger.getGlobal().log(Level.WARNING, exception.getMessage(), exception); } catch (final Exception nestedException) {}
 			}
 		}
 	}

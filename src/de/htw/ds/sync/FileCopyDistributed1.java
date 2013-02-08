@@ -7,7 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import de.htw.ds.TypeMetadata;
+import de.sb.javase.TypeMetadata;
 
 
 /**
@@ -15,7 +15,7 @@ import de.htw.ds.TypeMetadata;
  * Note that this is only expected to be more efficient that a single-threaded implementation
  * when using multi-core systems with multiple hard drives!</p>
  */
-@TypeMetadata(copyright="2008-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
+@TypeMetadata(copyright="2008-2013 Sascha Baumeister, all rights reserved", version="0.3.0", authors="Sascha Baumeister")
 public final class FileCopyDistributed1 {
 	private static final int BUFFER_LENGTH = 0x100000;
 
@@ -40,10 +40,10 @@ public final class FileCopyDistributed1 {
 			public void run() {
 				try {
 					Files.copy(sourcePath, pipedSink);
-				} catch (final Throwable exception) {
+				} catch (final Exception exception) {
 					exception.printStackTrace();
 				} finally {
-					try { pipedSink.close(); } catch (final Throwable exception) {}
+					try { pipedSink.close(); } catch (final Exception exception) {}
 				}
 			}
 		};
@@ -53,10 +53,10 @@ public final class FileCopyDistributed1 {
 			public void run() {
 				try {
 					Files.copy(pipedSource, sinkPath, StandardCopyOption.REPLACE_EXISTING);
-				} catch (final Throwable exception) {
+				} catch (final Exception exception) {
 					exception.printStackTrace();
 				} finally {
-					try { pipedSource.close(); } catch (final Throwable exception) {}
+					try { pipedSource.close(); } catch (final Exception exception) {}
 				}
 			}
 		};

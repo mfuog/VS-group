@@ -1,12 +1,11 @@
 package de.htw.ds.sort;
 
 import java.io.BufferedReader;
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
-import de.htw.ds.TypeMetadata;
+import de.sb.javase.TypeMetadata;
 
 
 /**
@@ -20,8 +19,8 @@ import de.htw.ds.TypeMetadata;
  * message      := String
  * </pre>
  */
-@TypeMetadata(copyright="2010-2012 Sascha Baumeister, all rights reserved", version="0.2.1", authors="Sascha Baumeister")
-public final class SortServerSkeleton implements Runnable, Closeable {
+@TypeMetadata(copyright="2010-2013 Sascha Baumeister, all rights reserved", version="0.2.1", authors="Sascha Baumeister")
+public final class SortServerSkeleton implements Runnable, AutoCloseable {
 	private final ServerSocket serviceSocket;
 	private final StreamSorter<String> streamSorter;
 
@@ -75,7 +74,7 @@ public final class SortServerSkeleton implements Runnable, Closeable {
 				// been transmitted. Otherwise you'd have to restart the server after
 				// every request!
 
-			} catch (final Throwable exception) {
+			} catch (final Exception exception) {
 				exception.printStackTrace();
 			} finally {
 				this.streamSorter.reset();
@@ -98,13 +97,13 @@ public final class SortServerSkeleton implements Runnable, Closeable {
 		// sorter cannot handle multiple sort operations at once!
 		final StreamSorter<String> streamSorter = SortServerSkeleton.createSorter();
 		try (SortServerSkeleton server = new SortServerSkeleton(servicePort, streamSorter)) {
-			System.out.println("Sort server running on one service thread, type \"quit\" to stop.");
+			System.out.println("Sort server running on one service thread, enter \"quit\" to stop.");
 			System.out.format("Service port is %s.\n", server.serviceSocket.getLocalPort());
 			System.out.format("Startup time is %sms.\n", System.currentTimeMillis() - timestamp);
 
 			// wait for stop signal on System.in
-			final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-			try { while (!"quit".equals(reader.readLine())); } catch (final IOException exception) {}
+			final BufferedReader charSource = new BufferedReader(new InputStreamReader(System.in));
+			try { while (!"quit".equals(charSource.readLine())); } catch (final IOException exception) {}
 		}
 	}
 
@@ -114,6 +113,6 @@ public final class SortServerSkeleton implements Runnable, Closeable {
 	 * @return the stream sorter
 	 */
 	private static StreamSorter<String> createSorter() {
-		return null; // TODO: create stream sorter.
+		return new StreamSingleThreadSorter<String>(); // TODO: create stream sorter as in SortClient2.
 	}
 }

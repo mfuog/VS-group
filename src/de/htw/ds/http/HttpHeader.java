@@ -10,13 +10,13 @@ import java.net.ProtocolException;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
-import de.htw.ds.TypeMetadata;
+import de.sb.javase.TypeMetadata;
 
 
 /**
  * <p>Abstract HTTP header information, see RFC 2616 for details.</p>
  */
-@TypeMetadata(copyright="2008-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
+@TypeMetadata(copyright="2008-2013 Sascha Baumeister, all rights reserved", version="0.3.0", authors="Sascha Baumeister")
 public abstract class HttpHeader<T> {
 	protected static final Charset US_ASCII = Charset.forName("US-ASCII");
 
@@ -25,15 +25,16 @@ public abstract class HttpHeader<T> {
 	private final byte revision;
 	private final Map<String,String> properties;
 	private final Map<String,Cookie> cookies;
-	private transient InputStream bodyInputStream;
-	private transient OutputStream bodyOutputStream;
+	private transient InputStream bodySource;
+	private transient OutputStream bodySink;
 
 
 	/**
 	 * Public constructor.
 	 * @param version the HTTP version
 	 * @param revision the HTTP revision
-	 * @throws IllegalArgumentException if the given version or revision is strictly negative
+	 * @throws IllegalArgumentException if the given version or revision
+	 *    is strictly negative
 	 */
 	public HttpHeader(final byte version, final byte revision) {
 		super();
@@ -120,79 +121,82 @@ public abstract class HttpHeader<T> {
 
 
 	/**
-	 * Returns the body input stream.
-	 * @return the body input stream
+	 * Returns the body source.
+	 * @return the body source
 	 */
-	public final InputStream getBodyInputStream() {
-		return this.bodyInputStream;
+	public final InputStream getBodySource() {
+		return this.bodySource;
 	}
 
 
 	/**
-	 * Sets the body input stream.
-	 * @param bodyInputStream the body input stream
-	 * @throws NullPointerException if the given body input stream is <tt>null</tt>
+	 * Sets the body source.
+	 * @param bodySource the body source
+	 * @throws NullPointerException if the given body source is <tt>null</tt>
 	 */
-	protected final void setBodyInputStream(final InputStream bodyInputStream) {
-		if (bodyInputStream == null) throw new NullPointerException();
-		this.bodyInputStream = bodyInputStream;
+	protected final void setBodySource(final InputStream bodySource) {
+		if (bodySource == null) throw new NullPointerException();
+		this.bodySource = bodySource;
 	}
 
 
 	/**
-	 * Returns the body output stream.
-	 * @return the body output stream
+	 * Returns the body sink.
+	 * @return the body sink
 	 */
-	public final OutputStream getBodyOutputStream() {
-		return this.bodyOutputStream;
+	public final OutputStream getBodySink() {
+		return this.bodySink;
 	}
 
 
 	/**
-	 * Sets the body output stream.
-	 * @param bodyOutputStream the body output stream
-	 * @throws NullPointerException if the given body output stream is <tt>null</tt>
+	 * Sets the body sink.
+	 * @param bodySink the body sink
+	 * @throws NullPointerException if the given body sink is <tt>null</tt>
 	 */
-	protected final void setBodyOutputStream(final OutputStream bodyOutputStream) {
-		if (bodyOutputStream == null) throw new NullPointerException();
-		this.bodyOutputStream = bodyOutputStream;
+	protected final void setBodySink(final OutputStream bodySink) {
+		if (bodySink == null) throw new NullPointerException();
+		this.bodySink = bodySink;
 	}
 
 
 	/**
-	 * Writes the receiver to the given output stream.
-	 * Note that the given output stream is not closed upon completion of this method!
-	 * @param outputStream the output stream to write the header to
-	 * @throws IOException if there is a general I/O related problem writing the header information
+	 * Writes the receiver to the given byte sink. Note that the
+	 * given sink is not closed upon completion of this method!
+	 * @param byteSink the byte sink to write the header to
+	 * @throws IOException if there is a general I/O related problem
+	 *    writing the header information
 	 */
-	protected abstract void write(final OutputStream outputStream) throws IOException;
+	protected abstract void write(final OutputStream byteSink) throws IOException;
 
 
 	/**
-	 * Reads the given input stream up to the next occurrence of '\n', interprets
-	 * the resulting data as an ASCII string, and returns the latter.
-	 * @param inputStream the input stream
+	 * Reads the given byte source up to the next occurrence of
+	 * '\n' (in ASCII), interprets the resulting data as an ASCII
+	 * string, and returns the latter.
+	 * @param byteSource the byte source
 	 * @return the trimmed line
 	 * @throws IOException if there is an I/O related problem
 	 */
-	protected static String readAsciiLine(final InputStream inputStream) throws IOException {
+	protected static String readAsciiLine(final InputStream byteSource) throws IOException {
 		boolean returnEncountered = false;
-		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		for (int asciiCharacter = inputStream.read(); asciiCharacter != -1 & asciiCharacter != '\n'; asciiCharacter = inputStream.read()) {
+		final ByteArrayOutputStream byteSink = new ByteArrayOutputStream();
+		for (int asciiCharacter = byteSource.read(); asciiCharacter != -1 & asciiCharacter != '\n'; asciiCharacter = byteSource.read()) {
 			if (asciiCharacter == '\r') {
 				returnEncountered = true;
 			} else {
-				if (returnEncountered) outputStream.write('\r');
-				outputStream.write(asciiCharacter);
+				if (returnEncountered) byteSink.write('\r');
+				byteSink.write(asciiCharacter);
 				returnEncountered = false;
 			}
 		}
-		return new String(outputStream.toByteArray(), US_ASCII);
+		return new String(byteSink.toByteArray(), US_ASCII);
 	}
 
 
 	/**
-	 * Returns a version or revision parsed from the given request words third entry. 
+	 * Returns a version or revision parsed from the given request words
+	 * third entry. 
 	 * @param requestWords the request words
 	 * @param index the index of the request word to be parsed
 	 * @param version true for version parsing, false for revision parsing
@@ -215,11 +219,12 @@ public abstract class HttpHeader<T> {
 
 
 	/**
-	 * <p>This local filter stream class limits the number of bytes that can be read to the
-	 * amount defined in the parent header. This is useful whenever an underlying stream
-	 * contains multiple "parts" that shall be read individually. Apart from this, all I/O
-	 * method calls are passed to the underlying stream, except for close() and the mark/reset
-	 * methods.</p>
+	 * <p>This local filter stream class limits the number of bytes that
+	 * can be read to the amount defined in the parent header. This is
+	 * useful whenever an underlying stream contains multiple "parts" that
+	 * shall be read individually. Apart from this, all I/O method calls
+	 * are passed to the underlying stream, except for close() and the
+	 * mark/reset methods.</p>
 	 */
 	protected final class HeaderInputStream extends FilterInputStream {
 
@@ -227,12 +232,12 @@ public abstract class HttpHeader<T> {
 
 
 		/**
-		 * Creates a new stream from the given stream.
-		 * @param inputStream the underlying stream
-		 * @throws NullPointerException if the given stream is <tt>null</tt>
+		 * Creates a new source from the given source.
+		 * @param byteSource the underlying source
+		 * @throws NullPointerException if the given source is <tt>null</tt>
 		 */
-		public HeaderInputStream(final InputStream inputStream) {
-			super(inputStream);
+		public HeaderInputStream(final InputStream byteSource) {
+			super(byteSource);
 			this.remainingBytes = null;
 		}
 
@@ -259,7 +264,7 @@ public abstract class HttpHeader<T> {
 		 */
 		@Override
 		public void close() throws IOException {
-			this.remainingBytes = 0l;
+			this.remainingBytes = 0L;
 			super.close();
 		}
 
@@ -275,7 +280,7 @@ public abstract class HttpHeader<T> {
 
 			final int result = super.read();
 			if (result == -1) {
-				this.remainingBytes = 0l;
+				this.remainingBytes = 0L;
 			} else if (this.remainingBytes > 0) {
 				this.remainingBytes -= 1;
 			}
@@ -369,7 +374,7 @@ public abstract class HttpHeader<T> {
 
 	/**
 	 * <p>This local filter stream class precedes any content written to the
-	 * underlying stream with the outer HTTP header, organized according to the
+	 * underlying sink with the outer HTTP header, organized according to the
 	 * HTTP protocol.</p>
 	 */
 	protected final class HeaderOutputStream extends FilterOutputStream {
@@ -378,12 +383,12 @@ public abstract class HttpHeader<T> {
 
 
 		/**
-		 * Creates a new uncommitted header stream.
-		 * @param outputStream the underlying stream
-		 * @throws NullPointerException if the given stream is <tt>null</tt>
+		 * Creates a new uncommitted header sink.
+		 * @param byteSink the underlying sink
+		 * @throws NullPointerException if the given sink is <tt>null</tt>
 		 */
-		protected HeaderOutputStream(final OutputStream outputStream) {
-			super(outputStream);
+		protected HeaderOutputStream(final OutputStream byteSink) {
+			super(byteSink);
 			this.committed = false;
 		}
 
@@ -433,7 +438,9 @@ public abstract class HttpHeader<T> {
 		 * @throws IOException if there is an underlying I/O related problem
 		 */
 		public void close() throws IOException {
-			if (this.committed) this.flush();
+			if (this.committed) {
+				try { this.flush(); } catch (final Exception exception) {}
+			}
 			super.close();
 		}
 	}

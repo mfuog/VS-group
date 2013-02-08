@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/">
+	<S:Body>
+		<ns2:addEntry xmlns:ns2="http://chat.ds.htw.de/">
+			<alias>2829@tabernakel</alias>
+			<content>TEST TEST</content>
+		</ns2:addEntry>
+	</S:Body>
+</S:Envelope>
+
+
+<?xml version="1.0" ?>
+<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/">
+	<S:Body>
+		<ns2:getEntries xmlns:ns2="http://chat.ds.htw.de/" />
+	</S:Body>
+</S:Envelope>

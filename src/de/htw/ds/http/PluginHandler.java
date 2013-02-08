@@ -1,13 +1,16 @@
 package de.htw.ds.http;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.RunnableFuture;
-import de.htw.ds.TypeMetadata;
-import de.htw.ds.util.ClassFileLoader;
+
+import de.sb.javase.ClassFileLoader;
+import de.sb.javase.TypeMetadata;
 
 
 /**
@@ -15,7 +18,7 @@ import de.htw.ds.util.ClassFileLoader;
  * class from an extended class path, instantiating it using the Java
  * Reflection API, and delegating the service message to said instance.</p>
  */
-@TypeMetadata(copyright="2008-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
+@TypeMetadata(copyright="2008-2013 Sascha Baumeister, all rights reserved", version="0.3.0", authors="Sascha Baumeister")
 public final class PluginHandler implements HttpRequestHandler {
 	private final String handlerClassName;
 	private final Path handlerClassPath;
@@ -53,13 +56,20 @@ public final class PluginHandler implements HttpRequestHandler {
 	public void service(final Context context, final HttpRequestHeader requestHeader, final HttpResponseHeader responseHeader) throws IOException {
 		final Callable<Object> callable = new Callable<Object>() {
 			public Object call() throws IOException {
+				final HttpRequestHandler handler;
 				try {
 					final Class<?> handlerClass = Class.forName(PluginHandler.this.handlerClassName, true, Thread.currentThread().getContextClassLoader());
-					final HttpRequestHandler handler = (HttpRequestHandler) handlerClass.newInstance();
-					handler.service(context, requestHeader, responseHeader);
-				} catch (final ClassNotFoundException | IllegalAccessException | InstantiationException exception) {
+					final Constructor<?> constructor = handlerClass.getDeclaredConstructor();
+					constructor.setAccessible(true);
+					handler = (HttpRequestHandler) constructor.newInstance();
+				} catch (final IllegalAccessException exception) {
+					throw new AssertionError();
+				} catch (final ClassNotFoundException | NoSuchMethodException | InstantiationException | InvocationTargetException exception) {
 					responseHeader.setType(HttpResponseHeader.Type.NO_IMPL);
+					return null;
 				}
+
+				handler.service(context, requestHeader, responseHeader);
 				return null;
 			}
 		};
@@ -69,19 +79,16 @@ public final class PluginHandler implements HttpRequestHandler {
 		thread.setContextClassLoader(new ClassFileLoader(thread.getContextClassLoader(), this.handlerClassPath));
 		thread.start();
 
-		while (true) {
-			try {
-				future.get();
-				break;
-			} catch (final InterruptedException exception) {
-				// try again
-			} catch (final ExecutionException exception) {
-				final Throwable cause = exception.getCause();
-				if (cause instanceof Error) throw (Error) cause;
-				if (cause instanceof RuntimeException) throw (RuntimeException) cause;
-				if (cause instanceof IOException) throw (IOException) cause;
-				throw new AssertionError();
-			}
+		try {
+			future.get();
+		} catch (final InterruptedException interrupt) {
+			throw new ThreadDeath();
+		} catch (final ExecutionException exception) {
+			final Throwable cause = exception.getCause();
+			if (cause instanceof Error) throw (Error) cause;
+			if (cause instanceof RuntimeException) throw (RuntimeException) cause;
+			if (cause instanceof IOException) throw (IOException) cause;
+			throw new AssertionError();
 		}
 	}
 }

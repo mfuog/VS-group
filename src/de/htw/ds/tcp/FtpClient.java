@@ -2,7 +2,6 @@ package de.htw.ds.tcp;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -23,17 +22,17 @@ import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import de.htw.ds.TypeMetadata;
-import de.htw.ds.util.BinaryTransporter;
-import de.htw.ds.util.SocketAddress;
+import de.sb.javase.TypeMetadata;
+import de.sb.javase.io.BinaryTransporter;
+import de.sb.javase.io.SocketAddress;
 
 
 /**
  * <p>This class implements a simple FTP client. It demonstrates the use of
  * TCP connections, and the Java Logging API.</p>
  */
-@TypeMetadata(copyright="2011-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
-public final class FtpClient implements Closeable {
+@TypeMetadata(copyright="2011-2013 Sascha Baumeister, all rights reserved", version="0.3.0", authors="Sascha Baumeister")
+public final class FtpClient implements AutoCloseable {
 	// workaround for Java7 bug initializing global logger without parent!
 	static { LogManager.getLogManager(); }
 
@@ -111,13 +110,13 @@ public final class FtpClient implements Closeable {
 	 * @throws IOException if there is an I/O related problem
 	 */
 	public synchronized void close() throws IOException {
-		if (!this.controlConnection.isClosed()) {
-			try {
+		try {
+			if (!this.controlConnection.isClosed()) {
 				final FtpResponse ftpResponse = this.processFtpRequest("QUIT");
 				if (ftpResponse.getCode() != 221) throw new ProtocolException(ftpResponse.toString());
-			} finally {
-				try { this.controlConnection.close(); } catch (final Throwable exception) {};
 			}
+		} finally {
+			try { this.controlConnection.close(); } catch (final Exception exception) {};
 		}
 	}
 
@@ -156,25 +155,13 @@ public final class FtpClient implements Closeable {
 			}
 
 			try (Socket dataConnection = new Socket(socketAddress.getAddress(), socketAddress.getPort())) {
-				// generiert einen finally-block dadurch
-				// catch only a close exception --> weil finally
 				ftpResponse = this.processFtpRequest("RETR " + sourceFile.getFileName());
-				// (150) ich muss beachten wann die datenübertrageung startet und wann sie endet --> sonst Fehler beim Logout!
 				if (ftpResponse.getCode() == 550) throw new NoSuchFileException(ftpResponse.toString());
 				if (ftpResponse.getCode() != 150) throw new ProtocolException(ftpResponse.toString());
 				new BinaryTransporter(false, MAX_PACKET_SIZE, dataConnection.getInputStream(), fileSink).call();
 			}
-			
-			/* traditionell
-			 * 
-			 * 
-			 * 
-			 * try {} catch finally { dataConnection.close; }
-			 * 
-			 */
 		}
 
-		// (226) ich muss beachten wann die datenübertrageung startet und wann sie endet --> sonst Fehler beim Logout!
 		ftpResponse = FtpResponse.parse(this.controlConnectionSource);
 		Logger.getGlobal().log(Level.INFO, ftpResponse.toString());
 		if (ftpResponse.getCode() != 226) throw new ProtocolException(ftpResponse.toString());
@@ -197,7 +184,7 @@ public final class FtpClient implements Closeable {
 		if (!Files.isReadable(sourceFile)) throw new NoSuchFileException(sourceFile.toString());
 
 		FtpResponse ftpResponse;
-		try (InputStream fileSource = Files.newInputStream(sourceFile)) { // --> nur wenn BinaryTransporter genutzt wird
+		try (InputStream fileSource = Files.newInputStream(sourceFile)) {
 			if (!sinkDirectory.toString().isEmpty()) {
 				ftpResponse = this.processFtpRequest("CWD " + sinkDirectory.toString().replace('\\', '/'));
 				if (ftpResponse.getCode() != 250) throw new NotDirectoryException(sinkDirectory.toString());
@@ -213,23 +200,16 @@ public final class FtpClient implements Closeable {
 			}
 
 			try (Socket dataConnection = new Socket(socketAddress.getAddress(), socketAddress.getPort())) {
-				ftpResponse = this.processFtpRequest("STOR " + sourceFile.getFileName()); // --> Exception geht an store() -> dann weiter bis zur main() 
-				// , wird nie wirklich behandelt
-				// generell: exception nur dann behandeln wenn sich an der stelle der Fehler behandeln lässt
-				// nie trows --> throwable
-				
+				ftpResponse = this.processFtpRequest("STOR " + sourceFile.getFileName());
 				if (ftpResponse.getCode() == 550) throw new AccessDeniedException(ftpResponse.toString());
 				if (ftpResponse.getCode() != 150) throw new ProtocolException(ftpResponse.toString());
 				new BinaryTransporter(false, MAX_PACKET_SIZE, fileSource, dataConnection.getOutputStream()).call();
-				
-				//or:
-				// File.copy(sourceFile, dataConnection.dgetOuputStream());
 			}
 		}
 
 		ftpResponse = FtpResponse.parse(this.controlConnectionSource);
 		Logger.getGlobal().log(Level.INFO, ftpResponse.toString());
-		if (ftpResponse.getCode() != 226) throw new ProtocolException(ftpResponse.toString()); // muss seperat für QUIT angesfragt werden
+		if (ftpResponse.getCode() != 226) throw new ProtocolException(ftpResponse.toString());
 	}
 
 

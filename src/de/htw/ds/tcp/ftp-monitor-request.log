@@ -1,6 +1,0 @@
-USER <userid>
-PASS <password>
-TYPE I
-PASV
-RETR test.ogg
-QUIT

@@ -1,0 +1,89 @@
+<!DOCTYPE html PUBLIC -//W3C//DTD XHTML 1.1//EN" "http://www.w3c.org/TR/xhtml11/DTD/xhtml11.dtd">
+<!-- author Sascha Baumeister (C) Sascha Baumeister 2008-2012 -->
+<!-- Note: This file must be added to a HTTP Container that supports URL prefix mapping!
+     For use with the HttpContainer class, the latter should be started with an additional
+     "/services/chatEntries=/de.htw.ds.chat.RestChatHandler.class" parameter that maps
+     all suitable requests to the latter class! Additionally, this file must be part of the
+     HTTP container's context directory!
+-->
+
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+		<title>AJAX Chat</title>
+		<script type="text/javascript" language="javascript">
+			// AJAX core function to create http request.
+			function createHttpRequest() {
+				if (self.window.XMLHttpRequest) { // Firefox, Mozilla, Safari, Chrome,...
+					var httpRequest = new XMLHttpRequest();
+					if (httpRequest.overrideMimeType) httpRequest.overrideMimeType("text/xml");
+					return httpRequest;
+				} else if (self.window.ActiveXObject) { // Internet Explorer
+					try {
+						return new ActiveXObject("Msxml2.XMLHTTP");
+					} catch (exception) {
+						return new ActiveXObject("Microsoft.XMLHTTP");
+					}
+				}
+				return null;
+			}
+
+			// Refreshes the chatEntries table with content loaded using web service call.
+			function refreshTable() {
+				var httpRequest = self.createHttpRequest();
+				httpRequest.onreadystatechange = function() {
+					if (httpRequest.readyState == 4 && httpRequest.status == 200) {
+						var table = self.document.getElementById("chatEntries");
+						while(table.hasChildNodes()) table.removeChild(table.lastChild);
+
+						var chatEntries = httpRequest.responseXML.documentElement.getElementsByTagName("chatEntry");
+						for (var index = 0; index < chatEntries.length; ++index) {
+							var chatEntry = chatEntries[index];
+							var row = self.document.createElement("tr");
+							table.appendChild(row);
+							var column = self.document.createElement("td");
+							column.appendChild(self.document.createTextNode(chatEntry.getAttribute("timestamp")));
+							row.appendChild(column);
+							column = self.document.createElement("td");
+							column.appendChild(self.document.createTextNode(chatEntry.getAttribute("alias")));
+							row.appendChild(column);
+							column = self.document.createElement("td");
+							column.appendChild(self.document.createTextNode(chatEntry.getAttribute("content")));
+							row.appendChild(column);
+						}
+					}
+				};
+				var url = self.location.protocol + "//" + self.location.host + "/services/chatEntries";
+				httpRequest.open("GET", url, true);
+				httpRequest.send("");
+			}
+
+			// Adds a chat entry using web service call, then refreshes chatEntries table content.
+			function addChatEntry() {
+				var httpRequest = self.createHttpRequest();
+				httpRequest.onreadystatechange = function() {
+					if (httpRequest.readyState == 4 && httpRequest.status == 200) {
+						self.refreshTable();
+					}
+				};
+				var alias = self.document.getElementById("alias").value;
+				var content = self.document.getElementById("content").value;
+				var url = self.location.protocol + "//" + self.location.host + "/services/chatEntries?alias=" + alias + "&content=" + content;
+				httpRequest.open("PUT", url, true);
+				httpRequest.send("");
+			}
+		</script>
+	</head>
+
+	<body onload="self.refreshTable()">
+		<div>
+			<input id="alias" type="text" />
+			<input id="content" type="text" />
+			<input type="button" value="send" onclick="self.addChatEntry()" />
+			<input type="button" value="refresh" onclick="self.refreshTable()" />
+		</div>
+		<br />
+		<div>Chat content:</div>
+		<div><table id="chatEntries"></table></div>
+	</body>
+</html>

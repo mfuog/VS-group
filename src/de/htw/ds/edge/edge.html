@@ -1,0 +1,16 @@
+<!DOCTYPE html PUBLIC -//W3C//DTD XHTML 1.1//EN" "http://www.w3c.org/TR/xhtml11/DTD/xhtml11.dtd">
+<!-- author Sascha Baumeister (C) Sascha Baumeister 2008-2012 -->
+
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+		<title>Edge Server Demo</title>
+	</head>
+	<body onload="document.forms[0].timezoneOffset.value = new Date().getTimezoneOffset() / -60.0">
+		<form action="/de.htw.ds.edge.EdgeHandler.class" method="POST">
+			<input name="timezoneOffset" type="hidden" />
+			<input name="resourcePath" type="text" size="80" value="" />
+			<input name="submit" type="submit" value="ok" />
+		</form>
+	</body>
+</html>

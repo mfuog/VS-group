@@ -8,8 +8,8 @@ import java.io.PipedOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import de.htw.ds.TypeMetadata;
-import de.htw.ds.util.BinaryTransporter;
+import de.sb.javase.TypeMetadata;
+import de.sb.javase.io.BinaryTransporter;
 
 
 /**
@@ -17,7 +17,7 @@ import de.htw.ds.util.BinaryTransporter;
  * Note that this is only expected to be more efficient that a single-threaded implementation
  * when using multi-core systems with multiple hard drives!</p>
  */
-@TypeMetadata(copyright="2008-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
+@TypeMetadata(copyright="2008-2013 Sascha Baumeister, all rights reserved", version="0.3.0", authors="Sascha Baumeister")
 public final class FileCopyDistributed2 {
 	private static final int BUFFER_LENGTH = 0x100000;
 
@@ -51,9 +51,9 @@ public final class FileCopyDistributed2 {
 			new Thread(fileSourceTransporter, "source-transporter").start();
 			new Thread(fileSinkTransporter, "sink-transporter").start();
 			System.out.println("two transporter threads started.");
-		} catch (final Throwable exception) {
-			try { fileSource.close(); } catch (final Throwable nestedException) {}
-			try { fileSink.close(); } catch (final Throwable nestedException) {}
+		} catch (final Exception exception) {
+			try { fileSource.close(); } catch (final Exception nestedException) { exception.addSuppressed(nestedException); }
+			try { fileSink.close(); } catch (final Exception nestedException) { exception.addSuppressed(nestedException); }
 			throw exception;
 		}
 	}

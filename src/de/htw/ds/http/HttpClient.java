@@ -5,14 +5,14 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
-import de.htw.ds.TypeMetadata;
+import de.sb.javase.TypeMetadata;
 
 
 /**
  * <p>This class demonstrates a minimal HTTP echo client. It requires a server name/address,
  * a server port, and an HTTP request path (leading slash must be present).</p>
  */
-@TypeMetadata(copyright="2010-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
+@TypeMetadata(copyright="2010-2013 Sascha Baumeister, all rights reserved", version="0.3.0", authors="Sascha Baumeister")
 public final class HttpClient {
 
 	/**
@@ -27,14 +27,14 @@ public final class HttpClient {
 		final String host = uri.getHost() == null ? "localhost" : uri.getHost();
 
 		try (Socket connection = new Socket(host, uri.getPort() == -1 ? 80 : uri.getPort())) {
-			final BufferedOutputStream outputStream = new BufferedOutputStream(connection.getOutputStream(), 1280);
-			final HttpRequestHeader requestHeader = new HttpRequestHeader((byte) 1, (byte) 1, null, outputStream);
+			final BufferedOutputStream connectionSink = new BufferedOutputStream(connection.getOutputStream(), 1280);
+			final HttpRequestHeader requestHeader = new HttpRequestHeader((byte) 1, (byte) 1, null, connectionSink);
 			requestHeader.setPath(uri.getPath() == null ? "/" : uri.getPath());
 			requestHeader.getProperties().put("Host", host);
-			requestHeader.getBodyOutputStream().flush();
+			requestHeader.getBodySink().flush();
 
 			HttpResponseHeader responseHeader = new HttpResponseHeader(connection.getInputStream(), System.out);
-			responseHeader.getBodyOutputStream().flush();
+			responseHeader.getBodySink().flush();
 		}
 	}
 }

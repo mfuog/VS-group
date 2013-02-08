@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
-import de.htw.ds.TypeMetadata;
+import de.sb.javase.TypeMetadata;
 
 
 /**
@@ -30,7 +30,7 @@ import de.htw.ds.TypeMetadata;
  * ForkJoinPool cannot be used in a static way, because worker re-synchronization is wrecked
  * once the pool is reused concurrently in multiple threads!</p>
  */
-@TypeMetadata(copyright="2008-2012 Sascha Baumeister, all rights reserved", version="1.0.0", authors="Sascha Baumeister")
+@TypeMetadata(copyright="2008-2013 Sascha Baumeister, all rights reserved", version="1.0.0", authors="Sascha Baumeister")
 public final class VectorMathDistributed {
 	private static final int PROCESSOR_COUNT = Runtime.getRuntime().availableProcessors();
 	private static enum MuxDistributionMode { SECTOR, STRIPE, ROW, PERFECT }
@@ -50,15 +50,11 @@ public final class VectorMathDistributed {
 	 * @throws IllegalArgumentException if the given parameters do not share the same length
 	 */
 	public static double[] add(final double[] leftOperand, final double[] rightOperand) {
-		// sektorartige Verteilung (um verteilung wie {2T, 2T, 2T, 1T} m��glich zu machen)
 		if (leftOperand.length != rightOperand.length) throw new IllegalArgumentException();
 		final double[] result = new double[leftOperand.length];
 
-		final int sectorWidth = leftOperand.length / PROCESSOR_COUNT; // Anzahl an Threads, die mindestens berarbeitet wird
+		final int sectorWidth = leftOperand.length / PROCESSOR_COUNT;
 		final int sectorThreshold = leftOperand.length % PROCESSOR_COUNT;
-		// st = Anzahle aller (sw + 1)
-		// threads = st + sw
-		
 		final Semaphore indebtedSemaphore = new Semaphore(1 - PROCESSOR_COUNT);
 
 		for (int threadIndex = 0; threadIndex < PROCESSOR_COUNT; ++threadIndex) {
@@ -66,8 +62,7 @@ public final class VectorMathDistributed {
 			final int stopIndex  = startIndex  + sectorWidth + (threadIndex < sectorThreshold ? 1 : 0);
 			final Runnable runnable = new Runnable() {
 				public void run() {
-					try { // runtime exceptions oder error (wie OutOfMemorieError) sind m��glich --> try-catch um deadlock zu vermeiden 
-						// schnelle --> werte
+					try {
 						for (int index = startIndex; index < stopIndex; ++index) {
 							result[index] = leftOperand[index] + rightOperand[index];
 						}
@@ -93,8 +88,6 @@ public final class VectorMathDistributed {
 	 */
 	public static double[][] mux(final double[] leftOperand, final double[] rightOperand) {
 		switch (MUX_IMPLEMENTATION) {
-			// multithreading l��sungen skalieren erst ab einer bestimmten anzahl an parametern
-			// hier wird selektiert, was am effektivsten ist
 			case SECTOR: return muxSector(leftOperand, rightOperand);
 			case STRIPE: return muxStripe(leftOperand, rightOperand);
 			case ROW: return muxRow(leftOperand, rightOperand);
@@ -207,7 +200,7 @@ public final class VectorMathDistributed {
 
 		indebtedSemaphore.acquireUninterruptibly();
 		return result;
-	} // NAchteil: bei "Hypermaschinen" dauert es l��nger, weil jeder Buszugriff auf 24 bit zugreift
+	}
 
 
 	/**
@@ -230,7 +223,6 @@ public final class VectorMathDistributed {
 		final Semaphore indebtedSemaphore = new Semaphore(1 - leftOperand.length);
 		// final Semaphore gateSemaphore = new Semaphore(PROCESSOR_COUNT);		// uncomment for unmanaged thread alternative!
 
-		// anzahl runnable = anzahl elemente --> "Arbeitspakete" --> mit threadpool
 		for (int threadIndex = 0; threadIndex < leftOperand.length; ++threadIndex) {
 			final int leftIndex = threadIndex;
 			final Runnable runnable = new Runnable() {
@@ -246,13 +238,6 @@ public final class VectorMathDistributed {
 				}
 			};
 
-			// !!!! n��chste zeile startet threadpool NICHT: Thread 
-				// 100000 Thread k��nnen nicht einfach gestartet werden, weil (abgesehen von Kollision, ..) 
-				// eine Obergrenze an threads ist festgelegt , weil nicht unendlich Speicher f��r register da ist
-				// w��rde gehen mit thread.start wenn man gateSemaphore aktiviert hat. Aber viel langsamer
-			// pool nimmt immer nur so viel er kann und packt den rest in eie queue
-				// muss definiert werden
-			
 			EXECUTOR_SERVICE.execute(runnable);							// comment for managed thread alternative!
 			// gateSemaphore.acquireUninterruptibly();					// uncomment for managed thread alternative!
 			// new Thread(runnable).start();							// uncomment for managed thread alternative!

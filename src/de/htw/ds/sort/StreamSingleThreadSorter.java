@@ -3,7 +3,7 @@ package de.htw.ds.sort;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import de.htw.ds.TypeMetadata;
+import de.sb.javase.TypeMetadata;
 
 
 /**
@@ -14,7 +14,7 @@ import de.htw.ds.TypeMetadata;
  * all elements are stored within the RAM of a single process.</p>
  * @param E the element type to be sorted in naturally ascending order
  */
-@TypeMetadata(copyright="2010-2012 Sascha Baumeister, all rights reserved", version="0.2.1", authors="Sascha Baumeister")
+@TypeMetadata(copyright="2010-2013 Sascha Baumeister, all rights reserved", version="0.2.1", authors="Sascha Baumeister")
 public final class StreamSingleThreadSorter<E extends Comparable<E>> implements StreamSorter<E> {
 	private final List<E> elements;
 	private int readIndex;

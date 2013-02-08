@@ -2,7 +2,6 @@ package de.htw.ds.tcp;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -21,16 +20,16 @@ import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import de.htw.ds.TypeMetadata;
-import de.htw.ds.util.SocketAddress;
+import de.sb.javase.TypeMetadata;
+import de.sb.javase.io.SocketAddress;
 
 
 /**
  * <p>This class implements a simple FTP client. It demonstrates the use of
  * TCP connections, and the Java Logging API.</p>
  */
-@TypeMetadata(copyright="2011-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
-public final class FtpClientSkeleton implements Closeable {
+@TypeMetadata(copyright="2011-2013 Sascha Baumeister, all rights reserved", version="0.3.0", authors="Sascha Baumeister")
+public final class FtpClientSkeleton implements AutoCloseable {
 	// workaround for Java7 bug initializing global logger without parent!
 	static { LogManager.getLogManager(); }
 
@@ -107,13 +106,13 @@ public final class FtpClientSkeleton implements Closeable {
 	 * @throws IOException if there is an I/O related problem
 	 */
 	public synchronized void close() throws IOException {
-		if (!this.controlConnection.isClosed()) {
-			try {
+		try {
+			if (!this.controlConnection.isClosed()) {
 				final FtpResponse ftpResponse = this.processFtpRequest("QUIT");
 				if (ftpResponse.getCode() != 221) throw new ProtocolException(ftpResponse.toString());
-			} finally {
-				try { this.controlConnection.close(); } catch (final Throwable exception) {};
 			}
+		} finally {
+			try { this.controlConnection.close(); } catch (final Exception exception) {};
 		}
 	}
 

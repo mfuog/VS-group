@@ -10,13 +10,13 @@ import java.io.OutputStreamWriter;
 import java.net.ProtocolException;
 import java.util.HashMap;
 import java.util.Map;
-import de.htw.ds.TypeMetadata;
+import de.sb.javase.TypeMetadata;
 
 
 /**
  * <p>HTTP response header information, see RFC 2616 for details.</p>
  */
-@TypeMetadata(copyright="2008-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
+@TypeMetadata(copyright="2008-2013 Sascha Baumeister, all rights reserved", version="0.3.0", authors="Sascha Baumeister")
 public final class HttpResponseHeader extends HttpHeader<HttpResponseHeader.Type> {
 	public static enum Type {
 		CONTINUE		((short) 100, "Continue"),
@@ -64,8 +64,8 @@ public final class HttpResponseHeader extends HttpHeader<HttpResponseHeader.Type
 		private final String comment;
 
 		private Type(final short code, final String comment) {
-			this.code		= code;
-			this.comment	= comment;
+			this.code = code;
+			this.comment = comment;
 		}
 
 		public short getCode() {
@@ -89,41 +89,42 @@ public final class HttpResponseHeader extends HttpHeader<HttpResponseHeader.Type
 	 * Public constructor for use in case an HTTP response shall be sent.
 	 * @param version the HTTP version
 	 * @param revision the HTTP revision
-	 * @param bodyInputStream an optional body input stream, or <tt>null</tt>
-	 * @param responseOutputStream a response output stream
-	 * @throws NullPointerException if the given response output stream is <tt>null</tt> 
-	 * @throws IllegalArgumentException if the given version or revision is strictly negative
+	 * @param bodySource an optional body source, or <tt>null</tt>
+	 * @param responseSink a response sink
+	 * @throws NullPointerException if the given response sink is <tt>null</tt> 
+	 * @throws IllegalArgumentException if the given version or revision is
+	 *    strictly negative
 	 */
-	public HttpResponseHeader(final byte version, final byte revision, final InputStream bodyInputStream, final OutputStream responseOutputStream) {
+	public HttpResponseHeader(final byte version, final byte revision, final InputStream bodySource, final OutputStream responseSink) {
 		super(version, revision);
 
 		this.setType(Type.OK);
-		this.setBodyInputStream(new HeaderInputStream(bodyInputStream == null? new ByteArrayInputStream(new byte[0]) : bodyInputStream));
-		this.setBodyOutputStream(new HeaderOutputStream(responseOutputStream));
+		this.setBodySource(new HeaderInputStream(bodySource == null? new ByteArrayInputStream(new byte[0]) : bodySource));
+		this.setBodySink(new HeaderOutputStream(responseSink));
 	}
 
 
 	/**
 	 * Public constructor for use in case an HTTP response is received.
-	 * @param inputStream a response input stream
-	 * @param responseOutputStream an optional response output stream, or <tt>null</tt>
-	 * @throws NullPointerException if the given response input stream is <tt>null</tt> 
+	 * @param responseSource a response source
+	 * @param responseSink an optional response sink, or <tt>null</tt>
+	 * @throws NullPointerException if the given response source is <tt>null</tt> 
 	 * @throws IOException in case there is an I/O related problem
 	 */
-	public HttpResponseHeader(final InputStream inputStream, final OutputStream responseOutputStream) throws IOException {
-		this(readAsciiLine(inputStream).split(" "), inputStream, responseOutputStream);
+	public HttpResponseHeader(final InputStream responseSource, final OutputStream responseSink) throws IOException {
+		this(readAsciiLine(responseSource).split(" "), responseSource, responseSink);
 	}
 
 
 	/**
 	 * Public constructor for use in case an HTTP response is received.
 	 * @param responseWords a response line split into it's constituent words
-	 * @param inputStream a response input stream
-	 * @param responseOutputStream an optional response output stream, or <tt>null</tt>
-	 * @throws NullPointerException if the given response words or input stream is <tt>null</tt> 
+	 * @param responseSource a response source
+	 * @param responseSink an optional response sink, or <tt>null</tt>
+	 * @throws NullPointerException if the given response words or source is <tt>null</tt> 
 	 * @throws IOException in case there is an I/O related problem
 	 */
-	private HttpResponseHeader(final String[] responseWords, final InputStream inputStream, final OutputStream responseOutputStream) throws IOException {
+	private HttpResponseHeader(final String[] responseWords, final InputStream responseSource, final OutputStream responseSink) throws IOException {
 		super(parseVersionRevision(responseWords, 0, true), parseVersionRevision(responseWords, 0, false));
 		if (responseWords.length < 3 | responseWords[0].length() != 8 | !responseWords[0].startsWith("HTTP/") | responseWords[0].charAt(6) != '.') throw new ProtocolException();
 
@@ -134,7 +135,7 @@ public final class HttpResponseHeader extends HttpHeader<HttpResponseHeader.Type
 			throw new ProtocolException();
 		}
 
-		for (String line = readAsciiLine(inputStream); !line.isEmpty(); line = readAsciiLine(inputStream)) {
+		for (String line = readAsciiLine(responseSource); !line.isEmpty(); line = readAsciiLine(responseSource)) {
 			int colonOffset = line.indexOf(':');
 			if (colonOffset == -1) throw new ProtocolException();
 
@@ -158,62 +159,63 @@ public final class HttpResponseHeader extends HttpHeader<HttpResponseHeader.Type
 			}
 		}
 
-		this.setBodyInputStream(new HeaderInputStream(inputStream));
-		this.setBodyOutputStream(new HeaderOutputStream(responseOutputStream == null ? new ByteArrayOutputStream() : responseOutputStream));
+		this.setBodySource(new HeaderInputStream(responseSource));
+		this.setBodySink(new HeaderOutputStream(responseSink == null ? new ByteArrayOutputStream() : responseSink));
 	}
 
 
 	/**
-	 * Writes the receiver to the given output stream.
-	 * Note that the given output stream is not closed upon completion of this method!
-	 * @param outputStream the output stream to write the header to
-	 * @throws IOException if there is a general I/O related problem writing the header information
+	 * Writes the receiver to the given byte sink. Note that the given sink
+	 * is not closed upon completion of this method!
+	 * @param byteSink the byte sink to write the header to
+	 * @throws IOException if there is a general I/O related problem writing
+	 *    the header information
 	 */
-	protected void write(final OutputStream outputStream) throws IOException {
-		final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, US_ASCII));
-		writer.write("HTTP/");
-		writer.write(Byte.toString(this.getVersion()));
-		writer.write(".");
-		writer.write(Byte.toString(this.getRevision()));
-		writer.write(' ');
-		writer.write(Short.toString(this.getType().getCode()));
-		writer.write(' ');
-		writer.write(this.getType().getComment());
-		writer.newLine();
+	protected void write(final OutputStream byteSink) throws IOException {
+		final BufferedWriter charSink = new BufferedWriter(new OutputStreamWriter(byteSink, US_ASCII));
+		charSink.write("HTTP/");
+		charSink.write(Byte.toString(this.getVersion()));
+		charSink.write(".");
+		charSink.write(Byte.toString(this.getRevision()));
+		charSink.write(' ');
+		charSink.write(Short.toString(this.getType().getCode()));
+		charSink.write(' ');
+		charSink.write(this.getType().getComment());
+		charSink.newLine();
 
 		for (final Map.Entry<String, String> property : this.getProperties().entrySet()) {
-			writer.write(property.getKey());
-			writer.write(": ");
-			writer.write(property.getValue());
-			writer.newLine();
+			charSink.write(property.getKey());
+			charSink.write(": ");
+			charSink.write(property.getValue());
+			charSink.newLine();
 		}
 
 		for (final Cookie cookie : this.getCookies().values()) {
-			writer.write("Set-Cookie: ");
-			writer.write(cookie.getName());
-			writer.write("=");
-			writer.write(cookie.getValue());
+			charSink.write("Set-Cookie: ");
+			charSink.write(cookie.getName());
+			charSink.write("=");
+			charSink.write(cookie.getValue());
 
 			if (cookie.getExpires() != null) {
-				writer.write("; expires=");
-				writer.write(cookie.getExpires());
+				charSink.write("; expires=");
+				charSink.write(cookie.getExpires());
 			}
 			if (cookie.getPath() != null) {
-				writer.write("; path=");
-				writer.write(cookie.getPath());
+				charSink.write("; path=");
+				charSink.write(cookie.getPath());
 			}
 			if (cookie.getDomain() != null) {
-				writer.write("; domain=");
-				writer.write(cookie.getDomain());
+				charSink.write("; domain=");
+				charSink.write(cookie.getDomain());
 			}
-			writer.newLine();
+			charSink.newLine();
 		}
-		writer.newLine();
-		writer.flush();
+		charSink.newLine();
+		charSink.flush();
 
 		final byte[] buffer = new byte[0x10000];
-		for (int bytesRead = this.getBodyInputStream().read(buffer); bytesRead != -1; bytesRead = this.getBodyInputStream().read(buffer)) {
-			outputStream.write(buffer, 0, bytesRead);
+		for (int bytesRead = this.getBodySource().read(buffer); bytesRead != -1; bytesRead = this.getBodySource().read(buffer)) {
+			byteSink.write(buffer, 0, bytesRead);
 		}
 	}
 }

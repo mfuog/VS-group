@@ -13,13 +13,13 @@ import java.net.URLDecoder;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import de.htw.ds.TypeMetadata;
+import de.sb.javase.TypeMetadata;
 
 
 /**
  * <p>HTTP request header information, see RFC 2616 for details.</p>
  */
-@TypeMetadata(copyright="2008-2012 Sascha Baumeister, all rights reserved", version="0.2.2", authors="Sascha Baumeister")
+@TypeMetadata(copyright="2008-2013 Sascha Baumeister, all rights reserved", version="0.3.0", authors="Sascha Baumeister")
 public final class HttpRequestHeader extends HttpHeader<HttpRequestHeader.Type> {
 	public static enum Type {
 		HEAD, GET, POST, PUT, DELETE, TRACE, OPTIONS, CONNECT
@@ -33,44 +33,45 @@ public final class HttpRequestHeader extends HttpHeader<HttpRequestHeader.Type> 
 	 * Public constructor for use in case an HTTP request shall be sent.
 	 * @param version the HTTP version
 	 * @param revision the HTTP revision
-	 * @param bodyInputStream an optional body input stream, or <tt>null</tt>
-	 * @param requestOutputStream the request output stream
-	 * @throws NullPointerException if the given path or request output stream is <tt>null</tt> 
-	 * @throws IllegalArgumentException if the given version or revision is strictly negative
+	 * @param bodySource an optional body source, or <tt>null</tt>
+	 * @param requestSink the request output stream
+	 * @throws NullPointerException if the given path or request sink is <tt>null</tt> 
+	 * @throws IllegalArgumentException if the given version or revision is
+	 *    strictly negative
 	 */
-	public HttpRequestHeader(final byte version, final byte revision, final InputStream bodyInputStream, final OutputStream requestOutputStream) {
+	public HttpRequestHeader(final byte version, final byte revision, final InputStream bodySource, final OutputStream requestSink) {
 		super(version, revision);
 
 		this.setType(Type.GET);
 		this.parameters = new HashMap<>();
-		this.setBodyInputStream(new HeaderInputStream(bodyInputStream == null? new ByteArrayInputStream(new byte[0]) : bodyInputStream));
-		this.setBodyOutputStream(new HeaderOutputStream(requestOutputStream));
+		this.setBodySource(new HeaderInputStream(bodySource == null? new ByteArrayInputStream(new byte[0]) : bodySource));
+		this.setBodySink(new HeaderOutputStream(requestSink));
 	}
 
 
 	/**
 	 * Public constructor for use in case an HTTP request is received.
-	 * Note that the input stream is stored in a version limited to the number
-	 * of bytes defined in the "Content-Length" property, in order to allow
-	 * the request body to be processed properly.
-	 * @param requestInputStream a request input stream
-	 * @param requestOutputStream an optional request output stream, or <tt>null</tt> 
+	 * Note that the request source is stored within a wrapper limiting
+	 * the content to the number of bytes defined in the "Content-Length"
+	 * property, in order to allow request bodies to be processed properly.
+	 * @param requestSource a request source
+	 * @param requestSink an optional request sink, or <tt>null</tt> 
 	 * @throws IOException in case there is an I/O related problem
 	 */
-	public HttpRequestHeader(final InputStream requestInputStream, final OutputStream requestOutputStream) throws IOException {
-		this(readAsciiLine(requestInputStream).split(" "), requestInputStream, requestOutputStream);
+	public HttpRequestHeader(final InputStream requestSource, final OutputStream requestSink) throws IOException {
+		this(readAsciiLine(requestSource).split(" "), requestSource, requestSink);
 	}
 
 
 	/**
 	 * Private constructor for use in case an HTTP request is received.
 	 * @param requestWords a request line split into it's constituent words
-	 * @param requestInputStream a request input stream
-	 * @param requestOutputStream an optional request output stream, or <tt>null</tt> 
+	 * @param requestSource a request source
+	 * @param requestSink an optional request sink, or <tt>null</tt> 
 	 * @throws NullPointerException if the given request words or input stream is <tt>null</tt> 
 	 * @throws IOException in case there is an I/O related problem
 	 */
-	private HttpRequestHeader(final String[] requestWords, final InputStream requestInputStream, final OutputStream requestOutputStream) throws IOException {
+	private HttpRequestHeader(final String[] requestWords, final InputStream requestSource, final OutputStream requestSink) throws IOException {
 		super(parseVersionRevision(requestWords, 2, true), parseVersionRevision(requestWords, 2, false));
 		if (requestWords.length != 3 | requestWords[2].length() != 8 | !requestWords[2].startsWith("HTTP/") | requestWords[2].charAt(6) != '.') throw new ProtocolException();
 		String uriCharset = "ISO-8859-1"; // Early Microsoft IE causes de-facto HTTP standard deviation!
@@ -87,7 +88,7 @@ public final class HttpRequestHeader extends HttpHeader<HttpRequestHeader.Type> 
 		String parameterText = (uriFragments.length == 2) ? uriFragments[1] : "";
 
 		// parse request properties and cookies
-		for (String line = readAsciiLine(requestInputStream); !line.isEmpty(); line = readAsciiLine(requestInputStream)) {
+		for (String line = readAsciiLine(requestSource); !line.isEmpty(); line = readAsciiLine(requestSource)) {
 			int colonOffset = line.indexOf(':');
 			if (colonOffset == -1) throw new ProtocolException();
 
@@ -117,10 +118,10 @@ public final class HttpRequestHeader extends HttpHeader<HttpRequestHeader.Type> 
 				}
 
 				try {
+					int totalBytesRead = 0;
 					final byte[] buffer = new byte[Integer.parseInt(contentLengthText)];
 
-					int totalBytesRead = 0;
-					for (int bytesRead = requestInputStream.read(buffer); bytesRead != -1; bytesRead = requestInputStream.read(buffer, totalBytesRead, buffer.length - totalBytesRead)) {
+					for (int bytesRead = requestSource.read(buffer); bytesRead != -1; bytesRead = requestSource.read(buffer, totalBytesRead, buffer.length - totalBytesRead)) {
 						totalBytesRead += bytesRead;
 						if (totalBytesRead == buffer.length) break;
 					}
@@ -156,8 +157,8 @@ public final class HttpRequestHeader extends HttpHeader<HttpRequestHeader.Type> 
 
 		this.path = URLDecoder.decode(uriFragments[0], uriCharset);
 		this.parameters = Collections.unmodifiableMap(parameters);
-		this.setBodyInputStream(new HeaderInputStream(requestInputStream));
-		this.setBodyOutputStream(new HeaderOutputStream(requestOutputStream == null ? new ByteArrayOutputStream() : requestOutputStream));
+		this.setBodySource(new HeaderInputStream(requestSource));
+		this.setBodySink(new HeaderOutputStream(requestSink == null ? new ByteArrayOutputStream() : requestSink));
 	}
 
 
@@ -191,60 +192,61 @@ public final class HttpRequestHeader extends HttpHeader<HttpRequestHeader.Type> 
 
 
 	/**
-	 * Writes the request header and it's associated body stream to the given output stream.
-	 * Note that the given output stream is not closed upon completion of this method!
-	 * @param outputStream the output stream to write the header to
-	 * @throws IOException if there is a general I/O related problem writing the header information
+	 * Writes the request header and it's associated body stream to the given sink.
+	 * Note that the given byte sink is not closed upon completion of this method!
+	 * @param byteSink the byte sink to write the header to
+	 * @throws IOException if there is a general I/O related problem writing the
+	 *    header information
 	 */
-	protected void write(final OutputStream outputStream) throws IOException {
+	protected void write(final OutputStream byteSink) throws IOException {
 		final String parameterText = parameterText(this.getParameters());
 		final byte[] parameterBytes = parameterText.getBytes(US_ASCII);
 		final boolean bodyParameters = this.getType() == Type.POST & "application/x-www-form-urlencoded".equals(this.getProperties().get("Content-Type"));
 
-		final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, US_ASCII));
-		writer.write(this.getType().toString());
-		writer.write(' ');
-		writer.write(this.getPath());
-		if (!bodyParameters) writer.write(parameterText);
-		writer.write(" HTTP/");
-		writer.write(Byte.toString(this.getVersion()));
-		writer.write('.');
-		writer.write(Byte.toString(this.getRevision()));
-		writer.newLine();
+		final BufferedWriter charSink = new BufferedWriter(new OutputStreamWriter(byteSink, US_ASCII));
+		charSink.write(this.getType().toString());
+		charSink.write(' ');
+		charSink.write(this.getPath());
+		if (!bodyParameters) charSink.write(parameterText);
+		charSink.write(" HTTP/");
+		charSink.write(Byte.toString(this.getVersion()));
+		charSink.write('.');
+		charSink.write(Byte.toString(this.getRevision()));
+		charSink.newLine();
 
 		for (final Map.Entry<String,String> property : this.getProperties().entrySet()) {
 			if (!bodyParameters | !property.getKey().equals("Content-Length")) {
-				writer.write(property.getKey());
-				writer.write(": ");
-				writer.write(property.getValue());
-				writer.newLine();
+				charSink.write(property.getKey());
+				charSink.write(": ");
+				charSink.write(property.getValue());
+				charSink.newLine();
 			}
 		}
 
 		if (bodyParameters) {
-			writer.write("Content-Length: ");
-			writer.write(Integer.toString(parameterBytes.length));
-			writer.newLine();
+			charSink.write("Content-Length: ");
+			charSink.write(Integer.toString(parameterBytes.length));
+			charSink.newLine();
 		}			
 
 		if (!this.getCookies().isEmpty()) {
-			writer.write(cookiesText(this.getCookies()));
-			writer.newLine();
+			charSink.write(cookiesText(this.getCookies()));
+			charSink.newLine();
 		}
 
-		writer.newLine();
-		writer.flush();
+		charSink.newLine();
+		charSink.flush();
 
 		if (bodyParameters) {
-			outputStream.write(parameterBytes);
-			outputStream.flush();
+			byteSink.write(parameterBytes);
+			byteSink.flush();
 		} else {
 			final byte[] buffer = new byte[0x10000];
-			for (int bytesRead = this.getBodyInputStream().read(buffer); bytesRead != -1; bytesRead = this.getBodyInputStream().read(buffer)) {
-				outputStream.write(buffer, 0, bytesRead);
+			for (int bytesRead = this.getBodySource().read(buffer); bytesRead != -1; bytesRead = this.getBodySource().read(buffer)) {
+				byteSink.write(buffer, 0, bytesRead);
 			}
 		}
-		this.getBodyInputStream().close();
+		this.getBodySource().close();
 	}
 
 
@@ -254,20 +256,20 @@ public final class HttpRequestHeader extends HttpHeader<HttpRequestHeader.Type> 
 	 * @return the text representation
 	 */
 	private static final String parameterText(final Map<String,String> parameters) {
-		final StringWriter writer = new StringWriter();
+		final StringWriter charSink = new StringWriter();
 		char separator = '?';
 
 		synchronized (parameters) {
 			for (final Map.Entry<String,String> parameter : parameters.entrySet()) {
-				writer.write(separator);
-				writer.write(parameter.getKey());
-				writer.write('=');
-				writer.write(parameter.getValue());
+				charSink.write(separator);
+				charSink.write(parameter.getKey());
+				charSink.write('=');
+				charSink.write(parameter.getValue());
 				separator = '&';
 			}
 		}
 
-		return writer.toString();
+		return charSink.toString();
 	}
 
 
@@ -277,20 +279,20 @@ public final class HttpRequestHeader extends HttpHeader<HttpRequestHeader.Type> 
 	 * @return the text representation
 	 */
 	private static final String cookiesText(final Map<String,Cookie> cookies) {
-		final StringWriter writer = new StringWriter();
-		writer.write("Cookie");
+		final StringWriter charSink = new StringWriter();
+		charSink.write("Cookie");
 		char separator = ' ';
 
 		synchronized (cookies) {
 			for (final Cookie cookie : cookies.values()) {
-				writer.write(separator);
-				writer.write(cookie.getName());
-				writer.write('=');
-				writer.write(cookie.getValue());
+				charSink.write(separator);
+				charSink.write(cookie.getName());
+				charSink.write('=');
+				charSink.write(cookie.getValue());
 				separator = ';';
 			}
 		}
 
-		return writer.toString();
+		return charSink.toString();
 	}
 }

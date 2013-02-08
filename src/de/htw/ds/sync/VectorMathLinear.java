@@ -1,7 +1,7 @@
 package de.htw.ds.sync;
 
 import java.util.Arrays;
-import de.htw.ds.TypeMetadata;
+import de.sb.javase.TypeMetadata;
 
 
 /**
@@ -9,7 +9,7 @@ import de.htw.ds.TypeMetadata;
  * of all available processor cores within a system, this implementation is only capable of
  * using one!</p>
  */
-@TypeMetadata(copyright="2008-2012 Sascha Baumeister, all rights reserved", version="1.0.0", authors="Sascha Baumeister")
+@TypeMetadata(copyright="2008-2013 Sascha Baumeister, all rights reserved", version="1.0.0", authors="Sascha Baumeister")
 public final class VectorMathLinear {
 	private static final int PROCESSOR_COUNT = Runtime.getRuntime().availableProcessors();
 
